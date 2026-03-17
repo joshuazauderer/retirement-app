@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  password      String?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+  household Household? @relation("PrimaryUser")
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Household {
+  id               String       @id @default(cuid())
+  name             String
+  primaryUserId    String       @unique
+  filingStatus     FilingStatus @default(SINGLE)
+  stateOfResidence String?
+  planningMode     PlanningMode @default(INDIVIDUAL)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  primaryUser User              @relation("PrimaryUser", fields: [primaryUserId], references: [id], onDelete: Cascade)
+  members     HouseholdMember[]
+
+  @@map("households")
+}
+
+model HouseholdMember {
+  id                  String           @id @default(cuid())
+  householdId         String
+  firstName           String
+  lastName            String
+  relationshipType    RelationshipType
+  dateOfBirth         DateTime
+  retirementTargetAge Int
+  lifeExpectancy      Int              @default(90)
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  @@map("household_members")
+}
+
+enum FilingStatus {
+  SINGLE
+  MARRIED_FILING_JOINTLY
+  MARRIED_FILING_SEPARATELY
+  HEAD_OF_HOUSEHOLD
+}
+
+enum PlanningMode {
+  INDIVIDUAL
+  COUPLE
+}
+
+enum RelationshipType {
+  PRIMARY
+  SPOUSE
+  DEPENDENT
+}
