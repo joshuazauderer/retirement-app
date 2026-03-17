@@ -1,22 +1,18 @@
-# Stage 1: Install dependencies
-FROM node:20-alpine AS deps
-WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm ci --only=production && npm cache clean --force
-
-# Stage 2: Build
+# Stage 1: Build
 FROM node:20-alpine AS builder
 WORKDIR /app
+
 # Force development so npm ci installs ALL deps (including devDependencies like tailwindcss)
 ENV NODE_ENV=development
+ENV NEXT_TELEMETRY_DISABLED=1
+
 COPY package.json package-lock.json* ./
 RUN npm ci
 COPY . .
 RUN npx prisma generate
-ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
-# Stage 3: Production runner
+# Stage 2: Production runner
 FROM node:20-alpine AS runner
 WORKDIR /app
 
@@ -32,7 +28,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 
 # startup script: run migrations then start app
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./
