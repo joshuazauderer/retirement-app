@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: "/app/housing", label: "Housing" },
   { href: "/app/insurance", label: "Insurance" },
   { href: "/app/assumptions", label: "Assumptions" },
+  { href: "/app/simulations", label: "Simulations" },
 ];
 
 export default async function AppLayout({

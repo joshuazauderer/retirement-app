@@ -83,6 +83,7 @@ model Household {
   realEstateProperties RealEstateProperty[]
   insuranceProfile    InsuranceProfile?
   planningAssumptions PlanningAssumptions?
+  simulationRuns      SimulationRun[]
 
   @@map("households")
 }
@@ -379,4 +380,28 @@ model PlanningAssumptions {
   household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
 
   @@map("planning_assumptions")
+}
+
+model SimulationRun {
+  id           String    @id @default(cuid())
+  householdId  String
+  household    Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  runType      String    @default("deterministic")
+  label        String?
+  snapshotJson Json
+  outputJson   Json
+  success          Boolean
+  firstDepletionYear Int?
+  endingBalance    Decimal  @db.Decimal(18, 2)
+  endingNetWorth   Decimal  @db.Decimal(18, 2)
+  totalWithdrawals Decimal  @db.Decimal(18, 2)
+  totalTaxes       Decimal  @db.Decimal(18, 2)
+  projectionStartYear Int
+  projectionEndYear   Int
+  yearsProjected      Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([householdId])
+  @@map("simulation_runs")
 }
