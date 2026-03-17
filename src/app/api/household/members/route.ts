@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { householdService, HouseholdServiceError } from "@/services/householdService";
+import { requireHousehold } from "@/lib/getHousehold";
+
+export async function GET() {
+  const result = await requireHousehold();
+  if ("error" in result) return result.error;
+  return NextResponse.json({ members: result.members });
+}
 
 export async function POST(req: NextRequest) {
   const session = await auth();
