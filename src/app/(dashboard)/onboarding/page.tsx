@@ -272,9 +272,9 @@ function Step2({ defaultValues, onNext, onBack }: { defaultValues: Partial<FormD
             ))}
           </div>
           {errors.planningMode && <p className="text-xs text-red-500">{errors.planningMode.message}</p>}
-          <div className="flex gap-3">
-            <Button type="button" variant="outline" className="w-full" onClick={onBack}>Back</Button>
+          <div className="space-y-2">
             <Button type="submit" className="w-full">Continue</Button>
+            <Button type="button" variant="outline" className="w-full" onClick={onBack}>Back</Button>
           </div>
         </form>
       </CardContent>
@@ -317,9 +317,9 @@ function Step3({ defaultValues, onNext, onBack }: { defaultValues: Partial<FormD
             <Input type="date" {...register("spouseDateOfBirth")} />
             {errors.spouseDateOfBirth && <p className="text-xs text-red-500">{errors.spouseDateOfBirth.message as string}</p>}
           </div>
-          <div className="flex gap-3">
-            <Button type="button" variant="outline" className="w-full" onClick={onBack}>Back</Button>
+          <div className="space-y-2">
             <Button type="submit" className="w-full">Continue</Button>
+            <Button type="button" variant="outline" className="w-full" onClick={onBack}>Back</Button>
           </div>
         </form>
       </CardContent>
@@ -364,9 +364,9 @@ function Step4({ defaultValues, onNext, onBack }: { defaultValues: Partial<FormD
             </select>
             {errors.filingStatus && <p className="text-xs text-red-500">{errors.filingStatus.message}</p>}
           </div>
-          <div className="flex gap-3">
-            <Button type="button" variant="outline" className="w-full" onClick={onBack}>Back</Button>
+          <div className="space-y-2">
             <Button type="submit" className="w-full">Continue</Button>
+            <Button type="button" variant="outline" className="w-full" onClick={onBack}>Back</Button>
           </div>
         </form>
       </CardContent>
@@ -432,11 +432,11 @@ function Step5({
               </div>
             </div>
           )}
-          <div className="flex gap-3">
-            <Button type="button" variant="outline" className="w-full" onClick={onBack} disabled={loading}>Back</Button>
+          <div className="space-y-2">
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Setting up..." : "Complete Setup"}
             </Button>
+            <Button type="button" variant="outline" className="w-full" onClick={onBack} disabled={loading}>Back</Button>
           </div>
         </form>
       </CardContent>
