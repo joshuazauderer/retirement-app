@@ -7,10 +7,13 @@ RUN npm ci --only=production && npm cache clean --force
 # Stage 2: Build
 FROM node:20-alpine AS builder
 WORKDIR /app
+# Force development so npm ci installs ALL deps (including devDependencies like tailwindcss)
+ENV NODE_ENV=development
 COPY package.json package-lock.json* ./
 RUN npm ci
 COPY . .
 RUN npx prisma generate
+ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
 # Stage 3: Production runner
