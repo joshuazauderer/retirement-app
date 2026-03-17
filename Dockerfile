@@ -28,7 +28,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+
+# Install prisma CLI with all its JS deps in an isolated dir at build time
+# (standalone output omits CLI deps like 'effect', 'c12', etc.)
+RUN npm install --prefix /prisma-cli prisma@6 --loglevel error
 
 # startup script: run migrations then start app
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./
