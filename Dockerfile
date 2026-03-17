@@ -4,9 +4,9 @@ WORKDIR /app
 
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# npm ci installs devDependencies by default when NODE_ENV is not set
+# --include=dev forces devDependencies regardless of NODE_ENV injected by CI
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN npm ci --include=dev
 COPY . .
 RUN npx prisma generate
 # Build in production mode explicitly — avoids mixing dev/prod runtimes
