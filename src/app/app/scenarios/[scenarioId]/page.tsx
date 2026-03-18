@@ -43,7 +43,7 @@ export default function ScenarioDetailPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <h1 className="text-2xl font-bold text-slate-900">{scenario.name as string}</h1>
-            {scenario.isBaseline && (
+            {Boolean(scenario.isBaseline) && (
               <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">
                 Baseline
               </span>
