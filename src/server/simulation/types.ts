@@ -114,8 +114,18 @@ export interface ProjectionYearState {
   liabilityPayments: number;
   taxes: number;
   contributions: number;
+  /** Needs-based cash-flow gap (what's required to cover expenses). Always computed. */
   requiredWithdrawal: number;
+  /**
+   * Phase 7: The withdrawal target from the policy engine.
+   * Only set when a withdrawalPolicy is injected; undefined otherwise (use requiredWithdrawal).
+   */
+  policyWithdrawalTarget?: number;
+  /** Phase 7: Guardrail adjustment direction for this year (undefined when no policy). */
+  guardrailDirection?: 'none' | 'reduced' | 'increased';
   withdrawalsByBucket: { taxable: number; taxDeferred: number; taxFree: number };
+  /** Phase 7: Per-account gross withdrawal amounts. */
+  withdrawalsByAccount?: Record<string, number>;
   actualWithdrawal: number;
   shortfall: number;
   investmentGrowth: number;

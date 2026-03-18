@@ -5,6 +5,14 @@ import type {
   ProjectionRunSummary,
 } from "./types";
 import { getMemberAgeAtYear } from "./normalizeInputs";
+import type { WithdrawalStrategyConfig, WithdrawalOrderingType } from "../withdrawalStrategies/types";
+import {
+  createPolicyEngineState,
+  initializePolicyStateAtRetirement,
+  computeWithdrawalInstruction,
+  advancePolicyState,
+} from "../withdrawalStrategies/withdrawalPolicyEngine";
+import { executeOrderedWithdrawals } from "../withdrawalStrategies/withdrawalOrderingService";
 
 /**
  * Run a deterministic year-by-year projection.
@@ -19,7 +27,21 @@ import { getMemberAgeAtYear } from "./normalizeInputs";
  */
 export function runDeterministicProjection(
   snapshot: SimulationSnapshot,
-  options?: { annualReturns?: number[] }
+  options?: {
+    /** Per-year portfolio return vector (Monte Carlo mode). Index 0 = first projection year. */
+    annualReturns?: number[];
+    /**
+     * Phase 7: Injectable withdrawal policy. When provided, the policy determines
+     * the withdrawal target each retirement year instead of the raw cash-flow gap.
+     * Pre-retirement years always remain needs-based.
+     */
+    withdrawalPolicy?: WithdrawalStrategyConfig;
+    /**
+     * Phase 7: Withdrawal ordering strategy. Defaults to TAXABLE_FIRST when absent,
+     * preserving the existing engine behavior.
+     */
+    orderingType?: WithdrawalOrderingType;
+  }
 ): DeterministicProjectionResult {
   const {
     timeline,
@@ -57,6 +79,10 @@ export function runDeterministicProjection(
 
   // Track when each benefit first became active for COLA calculation
   const benefitStartYear: Record<string, number> = {};
+
+  // Phase 7: Policy engine state — carries guardrail target and baseline values across years
+  const policyState = createPolicyEngineState();
+  const effectiveOrdering = options?.orderingType ?? 'TAXABLE_FIRST';
 
   for (const year of years) {
     const n = year - timeline.simulationYearStart; // years from baseline
@@ -175,11 +201,47 @@ export function runDeterministicProjection(
     const requiredWithdrawal = Math.max(0, -netCashFlow);
 
     // ---- STEP 9: Execute withdrawals ----
-    const withdrawalResult = executeWithdrawals(
-      requiredWithdrawal,
+    // Phase 7: If a withdrawal policy is configured and the primary member is
+    // retired, let the policy engine determine the target withdrawal amount and
+    // direction. Otherwise, fall back to the needs-based gap.
+    let policyWithdrawalTarget: number | undefined;
+    let guardrailDir: 'none' | 'reduced' | 'increased' = 'none';
+
+    if (options?.withdrawalPolicy && primaryRetired) {
+      // First retirement year: initialize policy state with starting portfolio value
+      initializePolicyStateAtRetirement(
+        policyState,
+        year,
+        beginningTotalAssets,
+        options.withdrawalPolicy
+      );
+
+      const instruction = computeWithdrawalInstruction(
+        options.withdrawalPolicy,
+        year,
+        policyState,
+        requiredWithdrawal,
+        beginningTotalAssets,
+        planningAssumptions.inflationRate,
+        primaryRetired
+      );
+
+      policyWithdrawalTarget = instruction.targetWithdrawal;
+      guardrailDir = instruction.guardrailDirection;
+
+      // Carry the instruction target forward for guardrail continuity
+      advancePolicyState(policyState, instruction);
+    }
+
+    const effectiveWithdrawalRequest =
+      policyWithdrawalTarget !== undefined ? policyWithdrawalTarget : requiredWithdrawal;
+
+    const withdrawalResult = executeOrderedWithdrawals(
+      effectiveWithdrawalRequest,
       accountBalances,
       assetAccounts,
-      planningAssumptions.assumedEffectiveTaxRate
+      planningAssumptions.assumedEffectiveTaxRate,
+      effectiveOrdering
     );
 
     // ---- STEP 10: Investment growth + update account balances ----
@@ -262,7 +324,10 @@ export function runDeterministicProjection(
       taxes,
       contributions: totalContributions,
       requiredWithdrawal,
+      policyWithdrawalTarget,
+      guardrailDirection: guardrailDir,
       withdrawalsByBucket: withdrawalResult.byBucket,
+      withdrawalsByAccount: withdrawalResult.byAccount,
       actualWithdrawal: withdrawalResult.actualWithdrawal,
       shortfall: withdrawalResult.shortfall,
       investmentGrowth,
@@ -303,80 +368,7 @@ export function runDeterministicProjection(
 }
 
 // ---------------------------------------------------------------------------
-// Withdrawal engine — draws from accounts in tax-efficiency order
+// Note: withdrawal execution is now handled by executeOrderedWithdrawals()
+// in src/server/withdrawalStrategies/withdrawalOrderingService.ts.
+// This keeps ordering logic centralized, typed, and testable.
 // ---------------------------------------------------------------------------
-function executeWithdrawals(
-  requiredWithdrawal: number,
-  accountBalances: Record<string, number>,
-  accounts: Array<{
-    id: string;
-    taxTreatment: string;
-    expectedReturnRate: number;
-  }>,
-  taxRate: number
-): {
-  actualWithdrawal: number;
-  shortfall: number;
-  byAccount: Record<string, number>;
-  byBucket: { taxable: number; taxDeferred: number; taxFree: number };
-} {
-  if (requiredWithdrawal <= 0) {
-    return {
-      actualWithdrawal: 0,
-      shortfall: 0,
-      byAccount: {},
-      byBucket: { taxable: 0, taxDeferred: 0, taxFree: 0 },
-    };
-  }
-
-  // Withdrawal order: TAXABLE → TAX_DEFERRED → TAX_FREE → MIXED
-  const order = ["TAXABLE", "TAX_DEFERRED", "TAX_FREE", "MIXED"];
-  const byAccount: Record<string, number> = {};
-  const byBucket = { taxable: 0, taxDeferred: 0, taxFree: 0 };
-
-  let remaining = requiredWithdrawal;
-
-  for (const treatment of order) {
-    const accs = accounts.filter((a) => a.taxTreatment === treatment);
-    for (const acc of accs) {
-      if (remaining <= 0) break;
-      const avail = accountBalances[acc.id] ?? 0;
-      if (avail <= 0) continue;
-
-      let grossNeed = remaining;
-      // For tax-deferred, gross up the withdrawal to account for taxes owed
-      if (
-        treatment === "TAX_DEFERRED" &&
-        taxRate > 0 &&
-        taxRate < 1
-      ) {
-        grossNeed = remaining / (1 - taxRate);
-      }
-
-      const withdrawn = Math.min(avail, grossNeed);
-      byAccount[acc.id] = (byAccount[acc.id] ?? 0) + withdrawn;
-
-      if (treatment === "TAXABLE") byBucket.taxable += withdrawn;
-      else if (treatment === "TAX_DEFERRED") byBucket.taxDeferred += withdrawn;
-      else byBucket.taxFree += withdrawn;
-
-      const netCovered =
-        treatment === "TAX_DEFERRED"
-          ? withdrawn * (1 - taxRate)
-          : withdrawn;
-      remaining = Math.max(0, remaining - netCovered);
-    }
-    if (remaining <= 0) break;
-  }
-
-  const actualWithdrawal = Object.values(byAccount).reduce(
-    (s, v) => s + v,
-    0
-  );
-  // Round to nearest cent to eliminate floating-point residuals from
-  // the tax-deferred gross-up calculation (x / (1-r)) * (1-r) ≠ x exactly.
-  // Sub-cent residuals are artifacts, not genuine shortfalls.
-  const shortfall = remaining > 0.01 ? remaining : 0;
-
-  return { actualWithdrawal, shortfall, byAccount, byBucket };
-}

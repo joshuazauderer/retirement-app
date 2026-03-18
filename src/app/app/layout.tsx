@@ -16,6 +16,8 @@ const NAV_ITEMS = [
   { href: "/app/simulations", label: "Simulations" },
   { href: "/app/scenarios", label: "Scenarios" },
   { href: "/app/monte-carlo", label: "Monte Carlo" },
+  { href: "/app/withdrawal-strategies", label: "Withdrawal" },
+  { href: "/app/sequence-risk", label: "Seq. Risk" },
   { href: "/app/calculators", label: "Calculators" },
 ];
 

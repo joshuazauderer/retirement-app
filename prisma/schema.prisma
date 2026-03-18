@@ -83,9 +83,10 @@ model Household {
   realEstateProperties RealEstateProperty[]
   insuranceProfile    InsuranceProfile?
   planningAssumptions PlanningAssumptions?
-  simulationRuns      SimulationRun[]
-  scenarios           Scenario[]
-  monteCarloRuns      MonteCarloRun[]
+  simulationRuns          SimulationRun[]
+  scenarios               Scenario[]
+  monteCarloRuns          MonteCarloRun[]
+  withdrawalStrategyRuns  WithdrawalStrategyRun[]
 
   @@map("households")
 }
@@ -421,13 +422,43 @@ model Scenario {
   isBaseline       Boolean   @default(false)
   overridesJson    Json?
   sourceScenarioId String?
-  simulationRuns   SimulationRun[]
-  monteCarloRuns   MonteCarloRun[]
-  createdAt        DateTime  @default(now())
+  simulationRuns          SimulationRun[]
+  monteCarloRuns          MonteCarloRun[]
+  withdrawalStrategyRuns  WithdrawalStrategyRun[]
+  createdAt               DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
   @@index([householdId])
   @@map("scenarios")
+}
+
+model WithdrawalStrategyRun {
+  id                  String    @id @default(cuid())
+  householdId         String
+  household           Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  scenarioId          String?
+  scenario            Scenario? @relation(fields: [scenarioId], references: [id], onDelete: SetNull)
+  label               String?
+  strategyType        String
+  orderingType        String
+  configJson          Json
+  snapshotJson        Json
+  summaryJson         Json
+  yearlyJson          Json
+  success             Boolean
+  firstDepletionYear  Int?
+  endingAssets        Decimal   @db.Decimal(18, 2)
+  totalWithdrawals    Decimal   @db.Decimal(18, 2)
+  totalTaxes          Decimal   @db.Decimal(18, 2)
+  isStressRun         Boolean   @default(false)
+  stressPathId        String?
+  projectionStartYear Int
+  projectionEndYear   Int
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([householdId])
+  @@map("withdrawal_strategy_runs")
 }
 
 model MonteCarloRun {
