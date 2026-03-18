@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 export default function ScenarioEditPage() {
   const { scenarioId } = useParams<{ scenarioId: string }>();
   const router = useRouter();
-  const [scenario, setScenario] = useState<Record<string, unknown> | null>(null);
+  const [scenario, setScenario] = useState<any>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(true);

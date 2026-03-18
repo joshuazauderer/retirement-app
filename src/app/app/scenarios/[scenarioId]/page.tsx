@@ -11,7 +11,8 @@ function fmt(n: number) {
 export default function ScenarioDetailPage() {
   const { scenarioId } = useParams<{ scenarioId: string }>();
   const router = useRouter();
-  const [scenario, setScenario] = useState<Record<string, unknown> | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [scenario, setScenario] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
 
@@ -49,7 +50,7 @@ export default function ScenarioDetailPage() {
               </span>
             )}
           </div>
-          {scenario.description && (
+          {Boolean(scenario.description) && (
             <p className="text-slate-500">{scenario.description as string}</p>
           )}
           <p className="text-xs text-slate-400 mt-1">
