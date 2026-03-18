@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import type { ScenarioOverridePayload, ScenarioSummary } from './types';
 import { validateOverrides } from './scenarioOverrideService';
@@ -86,7 +87,7 @@ export const scenarioService = {
         scenarioType: data.scenarioType ?? 'CUSTOM',
         isBaseline: data.isBaseline ?? false,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        overridesJson: data.overrides ? (JSON.parse(JSON.stringify(data.overrides)) as any) : null,
+        overridesJson: data.overrides ? (JSON.parse(JSON.stringify(data.overrides)) as any) : Prisma.JsonNull,
         sourceScenarioId: data.sourceScenarioId ?? null,
         status: 'ACTIVE',
       },
@@ -114,7 +115,7 @@ export const scenarioService = {
         ...(data.description !== undefined && { description: data.description }),
         ...(data.overrides !== undefined && {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          overridesJson: data.overrides ? (JSON.parse(JSON.stringify(data.overrides)) as any) : null,
+          overridesJson: data.overrides ? (JSON.parse(JSON.stringify(data.overrides)) as any) : Prisma.JsonNull,
         }),
       },
     });
@@ -179,7 +180,7 @@ export const scenarioService = {
         description: 'Current plan with no adjustments.',
         scenarioType: 'BASELINE',
         isBaseline: true,
-        overridesJson: null,
+        overridesJson: Prisma.JsonNull,
         status: 'ACTIVE',
       },
     });
