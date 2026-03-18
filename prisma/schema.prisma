@@ -85,6 +85,7 @@ model Household {
   planningAssumptions PlanningAssumptions?
   simulationRuns      SimulationRun[]
   scenarios           Scenario[]
+  monteCarloRuns      MonteCarloRun[]
 
   @@map("households")
 }
@@ -421,9 +422,38 @@ model Scenario {
   overridesJson    Json?
   sourceScenarioId String?
   simulationRuns   SimulationRun[]
+  monteCarloRuns   MonteCarloRun[]
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
   @@index([householdId])
   @@map("scenarios")
+}
+
+model MonteCarloRun {
+  id                  String    @id @default(cuid())
+  householdId         String
+  household           Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  scenarioId          String?
+  scenario            Scenario? @relation(fields: [scenarioId], references: [id], onDelete: SetNull)
+  label               String?
+  seed                Int
+  simulationCount     Int
+  engineVersion       String    @default("1.0.0")
+  assumptionsJson     Json
+  snapshotJson        Json
+  aggregationJson     Json
+  successProbability  Decimal   @db.Decimal(5, 4)
+  failureProbability  Decimal   @db.Decimal(5, 4)
+  medianEndingAssets  Decimal   @db.Decimal(18, 2)
+  p10EndingAssets     Decimal   @db.Decimal(18, 2)
+  p90EndingAssets     Decimal   @db.Decimal(18, 2)
+  medianDepletionYear Int?
+  projectionStartYear Int
+  projectionEndYear   Int
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([householdId])
+  @@map("monte_carlo_runs")
 }

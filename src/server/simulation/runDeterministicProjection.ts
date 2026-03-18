@@ -6,8 +6,20 @@ import type {
 } from "./types";
 import { getMemberAgeAtYear } from "./normalizeInputs";
 
+/**
+ * Run a deterministic year-by-year projection.
+ *
+ * @param options.annualReturns Per-year portfolio return vector for Monte Carlo mode.
+ *   Index 0 = first projection year. When provided, all accounts use this return for
+ *   the year instead of their individual expectedReturnRate. This keeps the cash-flow
+ *   ordering and withdrawal logic identical to the deterministic path.
+ *
+ * Limitation: v1 applies one portfolio-level return across all accounts per year.
+ * Individual account allocations are not modeled separately.
+ */
 export function runDeterministicProjection(
-  snapshot: SimulationSnapshot
+  snapshot: SimulationSnapshot,
+  options?: { annualReturns?: number[] }
 ): DeterministicProjectionResult {
   const {
     timeline,
@@ -171,9 +183,11 @@ export function runDeterministicProjection(
     );
 
     // ---- STEP 10: Investment growth + update account balances ----
+    // In Monte Carlo mode, options.annualReturns[n] overrides per-account rates so
+    // every account experiences the same sampled portfolio return for this year.
     const newAccountBalances: Record<string, number> = {};
     for (const acc of assetAccounts) {
-      const r = acc.expectedReturnRate;
+      const r = options?.annualReturns?.[n] ?? acc.expectedReturnRate;
       const beginBal = accountBalances[acc.id];
       const contrib = (() => {
         if (acc.annualContribution === 0) return 0;
@@ -359,7 +373,10 @@ function executeWithdrawals(
     (s, v) => s + v,
     0
   );
-  const shortfall = Math.max(0, remaining);
+  // Round to nearest cent to eliminate floating-point residuals from
+  // the tax-deferred gross-up calculation (x / (1-r)) * (1-r) ≠ x exactly.
+  // Sub-cent residuals are artifacts, not genuine shortfalls.
+  const shortfall = remaining > 0.01 ? remaining : 0;
 
   return { actualWithdrawal, shortfall, byAccount, byBucket };
 }
