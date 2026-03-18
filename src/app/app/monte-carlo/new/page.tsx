@@ -10,7 +10,7 @@ export default function MonteCarloNewPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [scenarios, setScenarios] = useState<ScenarioSummary[]>([]);
   const [scenarioId, setScenarioId] = useState('');
-  const [simulationCount, setSimulationCount] = useState(MC_BOUNDS.DEFAULT_SIMULATION_COUNT);
+  const [simulationCount, setSimulationCount] = useState<number>(MC_BOUNDS.DEFAULT_SIMULATION_COUNT);
   const [seed, setSeed] = useState(() => Math.floor(Math.random() * 100000));
   const [randomizeSeed, setRandomizeSeed] = useState(true);
   const [volatilityPct, setVolatilityPct] = useState('');
