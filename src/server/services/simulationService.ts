@@ -30,11 +30,10 @@ export const simulationService = {
         householdId,
         runType: "deterministic",
         label: "Baseline Projection",
-        snapshotJson: snapshot as unknown as Record<string, unknown>,
-        outputJson: {
-          yearByYear: result.yearByYear,
-          summary: result.summary,
-        } as unknown as Record<string, unknown>,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        snapshotJson: JSON.parse(JSON.stringify(snapshot)) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        outputJson: JSON.parse(JSON.stringify({ yearByYear: result.yearByYear, summary: result.summary })) as any,
         success: summary.success,
         firstDepletionYear: summary.firstDepletionYear,
         endingBalance: summary.endingBalance.toFixed(2),
