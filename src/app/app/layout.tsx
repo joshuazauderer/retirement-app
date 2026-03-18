@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { href: "/app/insurance", label: "Insurance" },
   { href: "/app/assumptions", label: "Assumptions" },
   { href: "/app/simulations", label: "Simulations" },
+  { href: "/app/scenarios", label: "Scenarios" },
   { href: "/app/calculators", label: "Calculators" },
 ];
 

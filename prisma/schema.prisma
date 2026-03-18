@@ -84,6 +84,7 @@ model Household {
   insuranceProfile    InsuranceProfile?
   planningAssumptions PlanningAssumptions?
   simulationRuns      SimulationRun[]
+  scenarios           Scenario[]
 
   @@map("households")
 }
@@ -386,6 +387,8 @@ model SimulationRun {
   id           String    @id @default(cuid())
   householdId  String
   household    Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  scenarioId   String?
+  scenario     Scenario? @relation(fields: [scenarioId], references: [id])
   runType      String    @default("deterministic")
   label        String?
   snapshotJson Json
@@ -404,4 +407,23 @@ model SimulationRun {
 
   @@index([householdId])
   @@map("simulation_runs")
+}
+
+model Scenario {
+  id               String    @id @default(cuid())
+  householdId      String
+  household        Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  name             String
+  description      String?
+  scenarioType     String    @default("CUSTOM")
+  status           String    @default("ACTIVE")
+  isBaseline       Boolean   @default(false)
+  overridesJson    Json?
+  sourceScenarioId String?
+  simulationRuns   SimulationRun[]
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([householdId])
+  @@map("scenarios")
 }
