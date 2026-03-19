@@ -37,6 +37,7 @@ const NAV_ITEMS = [
   { href: "/app/reports", label: "Reports" },
   { href: "/app/ai-insights", label: "AI Insights" },
   { href: "/app/copilot", label: "Copilot" },
+  { href: "/app/settings/access", label: "Access" },
 ];
 
 export default async function AppLayout({

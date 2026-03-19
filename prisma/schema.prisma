@@ -21,6 +21,10 @@ model User {
   sessions Session[]
   household Household? @relation("PrimaryUser")
 
+  householdMemberships    HouseholdMembership[]
+  sentInvitations         HouseholdInvitation[]  @relation("InvitedBy")
+  collaborationActivities CollaborationActivity[] @relation("ActivityActor")
+
   @@map("users")
 }
 
@@ -91,6 +95,8 @@ model Household {
   taxPlanningRuns         TaxPlanningRun[]
   healthcarePlanningRuns  HealthcarePlanningRun[]
   housingPlanningRuns     HousingPlanningRun[]
+  memberships             HouseholdMembership[]
+  invitations             HouseholdInvitation[]
 
   @@map("households")
 }
@@ -645,4 +651,72 @@ model AiInsightCache {
   @@index([householdId])
   @@index([runId])
   @@map("ai_insight_cache")
+}
+
+model HouseholdMembership {
+  id              String    @id @default(cuid())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  householdId     String
+  household       Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  role            String    // HouseholdRole
+  permissionLevel String    // PermissionLevel
+  status          String    @default("ACTIVE") // MembershipStatus
+
+  invitedByUserId String?
+  invitedAt       DateTime?
+  acceptedAt      DateTime?
+
+  @@unique([householdId, userId])
+  @@index([userId])
+  @@index([householdId])
+  @@map("household_memberships")
+}
+
+model HouseholdInvitation {
+  id              String    @id @default(cuid())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  householdId     String
+  household       Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  email           String
+  role            String    // HouseholdRole
+  permissionLevel String    // PermissionLevel
+  token           String    @unique
+  status          String    @default("PENDING") // InvitationStatus
+
+  invitedByUserId String
+  invitedBy       User      @relation("InvitedBy", fields: [invitedByUserId], references: [id])
+
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+
+  @@index([householdId])
+  @@index([email])
+  @@map("household_invitations")
+}
+
+model CollaborationActivity {
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+
+  householdId   String
+  actorUserId   String
+  actor         User     @relation("ActivityActor", fields: [actorUserId], references: [id])
+
+  action        String   // CollaborationAction
+  targetUserId  String?
+  targetEmail   String?
+  details       String?
+
+  @@index([householdId])
+  @@index([actorUserId])
+  @@map("collaboration_activities")
 }
