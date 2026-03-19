@@ -21,6 +21,9 @@ const NAV_ITEMS = [
   { href: "/app/social-security", label: "Social Sec." },
   { href: "/app/tax-planning", label: "Tax Planning" },
   { href: "/app/roth-conversions", label: "Roth" },
+  { href: "/app/healthcare-planning", label: "Healthcare" },
+  { href: "/app/longevity-stress", label: "Longevity" },
+  { href: "/app/long-term-care-stress", label: "LTC Stress" },
   { href: "/app/calculators", label: "Calculators" },
 ];
 

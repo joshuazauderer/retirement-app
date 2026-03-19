@@ -89,6 +89,7 @@ model Household {
   withdrawalStrategyRuns  WithdrawalStrategyRun[]
   socialSecurityRuns      SocialSecurityRun[]
   taxPlanningRuns         TaxPlanningRun[]
+  healthcarePlanningRuns  HealthcarePlanningRun[]
 
   @@map("households")
 }
@@ -429,6 +430,7 @@ model Scenario {
   withdrawalStrategyRuns  WithdrawalStrategyRun[]
   socialSecurityRuns      SocialSecurityRun[]
   taxPlanningRuns         TaxPlanningRun[]
+  healthcarePlanningRuns  HealthcarePlanningRun[]
   createdAt               DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -536,4 +538,37 @@ model TaxPlanningRun {
 
   @@index([householdId])
   @@map("tax_planning_runs")
+}
+
+model HealthcarePlanningRun {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  householdId  String
+  household    Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  scenarioId   String?
+  scenario     Scenario? @relation(fields: [scenarioId], references: [id], onDelete: SetNull)
+
+  label        String
+
+  healthcareConfigJson Json
+  summaryJson          Json
+  yearlyJson           Json
+
+  // Denormalized for queries
+  totalHealthcareCost  Float
+  endingAssets         Float
+  success              Boolean
+  firstDepletionYear   Int?
+  hasLtcStress         Boolean @default(false)
+  hasLongevityStress   Boolean @default(false)
+  longevityTargetAge   Int?
+  projectionStartYear  Int
+  projectionEndYear    Int
+
+  @@index([householdId])
+  @@index([scenarioId])
+  @@map("healthcare_planning_runs")
 }
