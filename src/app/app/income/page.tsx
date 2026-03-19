@@ -310,6 +310,10 @@ export default function IncomePage() {
             <input type="checkbox" {...register("taxable")} id="taxable" />
             <Label htmlFor="taxable">Taxable income</Label>
           </div>
+          <div className="flex items-center gap-2">
+            <input type="checkbox" {...register("isActive")} id="isActive" />
+            <Label htmlFor="isActive">Is Active</Label>
+          </div>
           <div className="space-y-1">
             <Label>Notes (optional)</Label>
             <Input {...register("notes")} placeholder="Optional notes" />

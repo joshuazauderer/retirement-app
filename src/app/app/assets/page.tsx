@@ -361,6 +361,10 @@ export default function AssetsPage() {
               placeholder="e.g. 0.07"
             />
           </div>
+          <div className="flex items-center gap-2">
+            <input type="checkbox" {...register("isActive")} id="isActive" />
+            <Label htmlFor="isActive">Is Active</Label>
+          </div>
           <div className="space-y-1">
             <Label>Notes (optional)</Label>
             <Input {...register("notes")} placeholder="Optional notes" />
