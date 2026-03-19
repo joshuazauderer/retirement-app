@@ -28,6 +28,7 @@ const NAV_ITEMS = [
   { href: "/app/downsizing", label: "Downsizing" },
   { href: "/app/legacy-planning", label: "Legacy" },
   { href: "/app/calculators", label: "Calculators" },
+  { href: "/app/reports", label: "Reports" },
 ];
 
 export default async function AppLayout({
