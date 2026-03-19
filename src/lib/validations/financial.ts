@@ -7,6 +7,14 @@ const decimalString = z
     "Must be a non-negative number"
   );
 
+// Converts NaN (from empty <input type="number" valueAsNumber>) → undefined
+// so optional number fields don't silently fail Zod validation.
+const optionalNumber = (schema: z.ZodNumber) =>
+  z.preprocess(
+    (v) => (typeof v === "number" && isNaN(v) ? undefined : v),
+    schema.optional()
+  );
+
 export const incomeSourceSchema = z.object({
   householdMemberId: z.string().min(1, "Member is required"),
   type: z.enum(["SALARY", "BONUS", "PENSION", "RENTAL", "BUSINESS", "PART_TIME", "OTHER"]),
@@ -126,7 +134,7 @@ export const realEstatePropertySchema = z.object({
   annualMaintenanceEstimate: z.string().optional(),
   isPrimaryResidence: z.boolean().default(false),
   downsizingCandidate: z.boolean().default(false),
-  expectedSaleYear: z.number().min(2024).max(2100).optional(),
+  expectedSaleYear: optionalNumber(z.number().min(2024).max(2100)),
   notes: z.string().optional(),
 });
 
@@ -146,11 +154,11 @@ export const planningAssumptionsSchema = z.object({
   inflationRate: z.number().min(0).max(0.2),
   expectedPortfolioReturn: z.number().min(0).max(0.3),
   expectedPortfolioVolatility: z.number().min(0).max(0.5),
-  defaultRetirementAgeOverride: z.number().min(50).max(80).optional(),
-  longevityTargetPrimary: z.number().min(60).max(120).optional(),
-  longevityTargetSpouse: z.number().min(60).max(120).optional(),
-  assumedTaxRate: z.number().min(0).max(0.6).optional(),
-  simulationCountDefault: z.number().min(100).max(10000).optional(),
+  defaultRetirementAgeOverride: optionalNumber(z.number().min(50).max(80)),
+  longevityTargetPrimary: optionalNumber(z.number().min(60).max(120)),
+  longevityTargetSpouse: optionalNumber(z.number().min(60).max(120)),
+  assumedTaxRate: optionalNumber(z.number().min(0).max(0.6)),
+  simulationCountDefault: optionalNumber(z.number().min(100).max(10000)),
   notes: z.string().optional(),
 });
 

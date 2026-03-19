@@ -88,6 +88,8 @@ export default function AssumptionsPage() {
       return;
     }
     setSaved(true);
+    // Auto-clear the success banner after 3 seconds
+    setTimeout(() => setSaved(false), 3000);
   };
 
   if (loading) {
@@ -110,8 +112,13 @@ export default function AssumptionsPage() {
           {serverError && (
             <p className="text-sm text-red-500">{serverError}</p>
           )}
+          {Object.keys(errors).length > 0 && (
+            <p className="text-sm text-red-500">Please fix the highlighted errors before saving.</p>
+          )}
           {saved && (
-            <p className="text-sm text-green-600">Saved successfully.</p>
+            <div className="flex items-center gap-2 rounded-md bg-green-50 border border-green-200 px-3 py-2">
+              <span className="text-green-600 text-sm font-medium">✓ Planning assumptions saved successfully.</span>
+            </div>
           )}
 
           <div>
