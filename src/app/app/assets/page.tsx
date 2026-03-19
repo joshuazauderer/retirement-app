@@ -235,6 +235,9 @@ export default function AssetsPage() {
       >
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {error && <p className="text-sm text-red-500">{error}</p>}
+          {Object.keys(errors).length > 0 && (
+            <p className="text-sm text-red-500">Please fix the highlighted errors before saving.</p>
+          )}
           <div className="space-y-1">
             <Label>Member (optional)</Label>
             <select

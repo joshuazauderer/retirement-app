@@ -42,9 +42,10 @@ export const assetAccountSchema = z.object({
   accountName: z.string().min(1, "Account name is required").max(100),
   currentBalance: decimalString,
   annualContributionAmount: z.string().optional(),
-  contributionFrequency: z
-    .enum(["WEEKLY", "BIWEEKLY", "MONTHLY", "QUARTERLY", "ANNUALLY"])
-    .optional(),
+  contributionFrequency: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.enum(["WEEKLY", "BIWEEKLY", "MONTHLY", "QUARTERLY", "ANNUALLY"]).optional()
+  ),
   employerMatchAmount: z.string().optional(),
   employerMatchPercent: z.string().optional(),
   taxTreatment: z.enum(["TAXABLE", "TAX_DEFERRED", "TAX_FREE", "MIXED"]),
