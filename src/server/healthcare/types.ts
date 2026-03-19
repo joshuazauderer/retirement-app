@@ -167,3 +167,37 @@ export const IRMAA_THRESHOLDS = {
 
 export const DEFAULT_HEALTHCARE_INFLATION = 0.05; // 5% per year
 export const DEFAULT_GENERAL_INFLATION = 0.025;
+
+// ---------------------------------------------------------------------------
+// Additional types added for healthcareAssumptionService and related services
+// ---------------------------------------------------------------------------
+
+export interface MemberHealthcareProfile {
+  memberId: string;
+  currentAge: number;
+  medicareEligibilityAge: number;
+  isPrimary: boolean;
+  isSpouse: boolean;
+}
+
+export interface LongevityOverrideConfig {
+  enabled: boolean;
+  targetAge: number;
+  person: 'primary' | 'spouse' | 'both';
+}
+
+export interface LongevityStressResultSummary {
+  extensionYears: number;
+  originalEndYear: number;
+  extendedEndYear: number;
+  primaryFinalAge: number;
+  spouseFinalAge?: number;
+}
+
+export interface LongTermCareStressSummary {
+  totalLtcCost: number;
+  activeYears: number;
+  peakAnnualCost: number;
+  firstLtcYear?: number;
+  lastLtcYear?: number;
+}

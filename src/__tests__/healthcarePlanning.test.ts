@@ -26,6 +26,36 @@ import { validateHealthcarePlanningInput } from '../server/healthcare/healthcare
 
 import { compareHealthcarePlanningRuns } from '../server/healthcare/healthcareComparisonService';
 
+import {
+  inflateHealthcareCost,
+  estimateLifetimeHealthcareCost,
+  healthcareInflationPremium,
+  describeHealthcareInflation,
+} from '../server/healthcare/healthcareInflationService';
+
+import {
+  loadEffectiveHealthcareAssumptions,
+  getHealthcareCostMode,
+  validateHealthcareAssumptions,
+} from '../server/healthcare/healthcareAssumptionService';
+
+import {
+  computeHouseholdPreMedicareCost,
+  preMedicareBridgeYearsRemaining,
+} from '../server/healthcare/preMedicareCostService';
+
+import {
+  computeHouseholdMedicareCost,
+  describeMedicareCoverageConfig,
+  isIRMAASurchargeApplicable,
+} from '../server/healthcare/medicareCostService';
+
+import {
+  computeLtcStressResult,
+  summarizeLtcStress,
+  LTC_NATIONAL_AVERAGES_2024,
+} from '../server/healthcare/longTermCareStressService';
+
 import { MEDICARE_2024 } from '../server/healthcare/types';
 
 import type { SimulationSnapshot } from '../server/simulation/types';
@@ -770,5 +800,285 @@ describe('Golden cases', () => {
 
     expect(extensionYears).toBe(5);
     expect(extended.timeline.projectionEndYear).toBe(2061 + 5); // 2066
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 9. HealthcareInflationService
+// ---------------------------------------------------------------------------
+
+describe('HealthcareInflationService', () => {
+  test('inflateHealthcareCost returns base amount in base year', () => {
+    const result = inflateHealthcareCost(10000, 2026, 2026, 0.05);
+    expect(result).toBeCloseTo(10000, 5);
+  });
+
+  test('inflateHealthcareCost inflates by 5% after one year', () => {
+    const result = inflateHealthcareCost(10000, 2027, 2026, 0.05);
+    expect(result).toBeCloseTo(10500, 1);
+  });
+
+  test('inflateHealthcareCost clamps to zero for past years', () => {
+    const result = inflateHealthcareCost(10000, 2020, 2026, 0.05);
+    expect(result).toBeCloseTo(10000, 5); // no deflation
+  });
+
+  test('estimateLifetimeHealthcareCost sums years correctly', () => {
+    // 1 year: just the base amount
+    const oneYear = estimateLifetimeHealthcareCost(10000, 2026, 2026, 0.05);
+    expect(oneYear).toBeCloseTo(10000, 1);
+
+    // 2 years: 10000 + 10500
+    const twoYears = estimateLifetimeHealthcareCost(10000, 2026, 2027, 0.05);
+    expect(twoYears).toBeCloseTo(20500, 0);
+  });
+
+  test('healthcareInflationPremium returns difference from general inflation', () => {
+    const premium = healthcareInflationPremium(0.05, 0.025);
+    expect(premium).toBeCloseTo(0.025, 5);
+  });
+
+  test('describeHealthcareInflation returns a non-empty string', () => {
+    const desc = describeHealthcareInflation(0.05);
+    expect(desc).toContain('5.0%');
+    expect(desc).toContain('annual healthcare inflation');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 10. HealthcareAssumptionService
+// ---------------------------------------------------------------------------
+
+describe('HealthcareAssumptionService', () => {
+  test('loadEffectiveHealthcareAssumptions uses defaults from input', () => {
+    const snapshot = makeSnapshot(60);
+    const input = makePlanningInput();
+    const assumptions = loadEffectiveHealthcareAssumptions(input, snapshot);
+    expect(assumptions.healthcareInflationRate).toBe(0.05);
+    expect(assumptions.medicareEligibilityAge).toBe(65);
+    expect(assumptions.ltcEnabled).toBe(false);
+    expect(assumptions.longevityEnabled).toBe(false);
+    expect(assumptions.includeSpouseHealthcare).toBe(false);
+  });
+
+  test('loadEffectiveHealthcareAssumptions builds member profiles from snapshot', () => {
+    const snapshot = makeSnapshot(60, 58);
+    const input = makePlanningInput({ includeSpouseHealthcare: true });
+    const assumptions = loadEffectiveHealthcareAssumptions(input, snapshot);
+    expect(assumptions.memberProfiles).toHaveLength(2);
+    const primary = assumptions.memberProfiles.find((m) => m.isPrimary);
+    const spouse = assumptions.memberProfiles.find((m) => m.isSpouse);
+    expect(primary?.currentAge).toBe(60);
+    expect(spouse?.currentAge).toBe(58);
+  });
+
+  test('getHealthcareCostMode returns pre_medicare before eligibility', () => {
+    expect(getHealthcareCostMode(60, 65, true)).toBe('pre_medicare');
+  });
+
+  test('getHealthcareCostMode returns medicare at eligibility age', () => {
+    expect(getHealthcareCostMode(65, 65, true)).toBe('medicare');
+  });
+
+  test('getHealthcareCostMode returns none when not alive', () => {
+    expect(getHealthcareCostMode(70, 65, false)).toBe('none');
+  });
+
+  test('validateHealthcareAssumptions warns on very high inflation', () => {
+    const snapshot = makeSnapshot(60);
+    const input = makePlanningInput({ healthcareInflationRate: 0.12 });
+    const assumptions = loadEffectiveHealthcareAssumptions(input, snapshot);
+    const { valid, warnings } = validateHealthcareAssumptions(assumptions);
+    expect(valid).toBe(true); // warnings don't block
+    expect(warnings.some((w) => w.includes('10%'))).toBe(true);
+  });
+
+  test('validateHealthcareAssumptions passes with normal assumptions', () => {
+    const snapshot = makeSnapshot(60);
+    const input = makePlanningInput();
+    const assumptions = loadEffectiveHealthcareAssumptions(input, snapshot);
+    const { valid, warnings } = validateHealthcareAssumptions(assumptions);
+    expect(valid).toBe(true);
+    expect(warnings).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 11. PreMedicareCostService
+// ---------------------------------------------------------------------------
+
+describe('PreMedicareCostService', () => {
+  test('computeHouseholdPreMedicareCost single person returns primary cost only', () => {
+    const result = computeHouseholdPreMedicareCost({
+      config: preMedicareConfig,
+      primaryAge: 60,
+      spouseAge: undefined,
+      medicareEligibilityAge: 65,
+      includeSpouse: false,
+      year: 2026,
+      baseYear: 2026,
+      healthcareInflationRate: 0.05,
+    });
+    expect(result.primaryCost).toBeCloseTo(15000, 0);
+    expect(result.spouseCost).toBe(0);
+    expect(result.total).toBeCloseTo(15000, 0);
+  });
+
+  test('computeHouseholdPreMedicareCost couple both pre-Medicare', () => {
+    const result = computeHouseholdPreMedicareCost({
+      config: preMedicareConfig,
+      primaryAge: 60,
+      spouseAge: 58,
+      medicareEligibilityAge: 65,
+      includeSpouse: true,
+      year: 2026,
+      baseYear: 2026,
+      healthcareInflationRate: 0.05,
+    });
+    expect(result.primaryCost).toBeGreaterThan(0);
+    expect(result.spouseCost).toBeGreaterThan(0);
+    expect(result.total).toBeCloseTo(result.primaryCost + result.spouseCost, 5);
+  });
+
+  test('computeHouseholdPreMedicareCost primary Medicare-eligible returns 0 for primary', () => {
+    const result = computeHouseholdPreMedicareCost({
+      config: preMedicareConfig,
+      primaryAge: 66,
+      spouseAge: 60,
+      medicareEligibilityAge: 65,
+      includeSpouse: true,
+      year: 2026,
+      baseYear: 2026,
+      healthcareInflationRate: 0.05,
+    });
+    expect(result.primaryCost).toBe(0);
+    expect(result.spouseCost).toBeGreaterThan(0);
+  });
+
+  test('preMedicareBridgeYearsRemaining returns 0 when already eligible', () => {
+    expect(preMedicareBridgeYearsRemaining(65, 65)).toBe(0);
+    expect(preMedicareBridgeYearsRemaining(70, 65)).toBe(0);
+  });
+
+  test('preMedicareBridgeYearsRemaining returns correct bridge years', () => {
+    expect(preMedicareBridgeYearsRemaining(60, 65)).toBe(5);
+    expect(preMedicareBridgeYearsRemaining(55, 65)).toBe(10);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 12. MedicareCostService
+// ---------------------------------------------------------------------------
+
+describe('MedicareCostService', () => {
+  test('computeHouseholdMedicareCost single Medicare-eligible person', () => {
+    const result = computeHouseholdMedicareCost({
+      config: medicareConfig,
+      primaryAge: 65,
+      spouseAge: undefined,
+      medicareEligibilityAge: 65,
+      includeSpouse: false,
+      grossIncome: 50000,
+      filingStatus: 'SINGLE',
+      year: 2026,
+      baseYear: 2026,
+      healthcareInflationRate: 0.05,
+    });
+    expect(result.primaryCost).toBeGreaterThan(0);
+    expect(result.spouseCost).toBe(0);
+    expect(result.total).toBe(result.primaryCost);
+  });
+
+  test('computeHouseholdMedicareCost couple both Medicare-eligible', () => {
+    const result = computeHouseholdMedicareCost({
+      config: medicareConfig,
+      primaryAge: 68,
+      spouseAge: 66,
+      medicareEligibilityAge: 65,
+      includeSpouse: true,
+      grossIncome: 80000,
+      filingStatus: 'MARRIED_FILING_JOINTLY',
+      year: 2026,
+      baseYear: 2026,
+      healthcareInflationRate: 0.05,
+    });
+    expect(result.primaryCost).toBeGreaterThan(0);
+    expect(result.spouseCost).toBeGreaterThan(0);
+    expect(result.total).toBeCloseTo(result.primaryCost + result.spouseCost, 5);
+  });
+
+  test('describeMedicareCoverageConfig lists included parts', () => {
+    const lines = describeMedicareCoverageConfig(medicareConfig);
+    expect(lines.some((l) => l.includes('Part B'))).toBe(true);
+    expect(lines.some((l) => l.includes('Part D'))).toBe(true);
+    expect(lines.some((l) => l.includes('Medigap'))).toBe(true);
+  });
+
+  test('isIRMAASurchargeApplicable returns true above threshold', () => {
+    expect(isIRMAASurchargeApplicable(150000, 'SINGLE')).toBe(true);
+    expect(isIRMAASurchargeApplicable(50000, 'SINGLE')).toBe(false);
+  });
+
+  test('isIRMAASurchargeApplicable uses MFJ threshold for joint filers', () => {
+    expect(isIRMAASurchargeApplicable(210000, 'MARRIED_FILING_JOINTLY')).toBe(true);
+    expect(isIRMAASurchargeApplicable(150000, 'MARRIED_FILING_JOINTLY')).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 13. LongTermCareStressService
+// ---------------------------------------------------------------------------
+
+describe('LongTermCareStressService', () => {
+  test('computeLtcStressResult returns 0 when disabled', () => {
+    const result = computeLtcStressResult(
+      { ...ltcConfig, enabled: false },
+      80, 2026, 2026, 0.05,
+    );
+    expect(result.ltcCost).toBe(0);
+    expect(result.ltcActive).toBe(false);
+    expect(result.cumulativeLtcCost).toBe(0);
+  });
+
+  test('computeLtcStressResult returns cost when in range', () => {
+    const result = computeLtcStressResult(ltcConfig, 80, 2026, 2026, 0.05);
+    expect(result.ltcCost).toBeCloseTo(90000, 0);
+    expect(result.ltcActive).toBe(true);
+    expect(result.cumulativeLtcCost).toBeCloseTo(90000, 0);
+  });
+
+  test('computeLtcStressResult accumulates cumulative cost', () => {
+    const first = computeLtcStressResult(ltcConfig, 80, 2026, 2026, 0.05, 0);
+    const second = computeLtcStressResult(ltcConfig, 81, 2027, 2026, 0.05, first.cumulativeLtcCost);
+    expect(second.cumulativeLtcCost).toBeGreaterThan(first.cumulativeLtcCost);
+  });
+
+  test('computeLtcStressResult returns 0 after LTC ends', () => {
+    const result = computeLtcStressResult(ltcConfig, 83, 2026, 2026, 0.05);
+    expect(result.ltcCost).toBe(0);
+    expect(result.ltcActive).toBe(false);
+  });
+
+  test('summarizeLtcStress returns zeros when disabled', () => {
+    const result = summarizeLtcStress(
+      { ...ltcConfig, enabled: false },
+      2026, 55, 0.05,
+    );
+    expect(result.totalLtcCost).toBe(0);
+    expect(result.activeYears).toBe(0);
+  });
+
+  test('summarizeLtcStress sums total cost for active years', () => {
+    // primary age at start = 55, ltc starts at 80 (25 years away), duration 3 years
+    const result = summarizeLtcStress(ltcConfig, 2026, 55, 0.05);
+    expect(result.totalLtcCost).toBeGreaterThan(0);
+    expect(result.activeYears).toBe(3);
+    expect(result.peakAnnualCost).toBeGreaterThan(0);
+  });
+
+  test('LTC_NATIONAL_AVERAGES_2024 has expected keys', () => {
+    expect(LTC_NATIONAL_AVERAGES_2024.homeHealthAide_annual).toBeGreaterThan(0);
+    expect(LTC_NATIONAL_AVERAGES_2024.assistedLiving_annual).toBeGreaterThan(0);
+    expect(LTC_NATIONAL_AVERAGES_2024.nursingHomeSemiPrivate_annual).toBeGreaterThan(0);
   });
 });

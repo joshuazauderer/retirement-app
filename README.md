@@ -174,3 +174,49 @@ Phase 7 adds 42 tests covering:
 - Stress path structure validation
 - Input validation
 - 6 golden planning cases
+
+## Phase 10 — Healthcare Cost Modeling + Longevity Stress Testing
+
+### What's included
+
+- **Pre-Medicare cost modeling**: Estimates annual healthcare costs for members not yet eligible for Medicare (typically before age 65). Handles couples with different Medicare eligibility timing.
+- **Medicare-era cost modeling**: Models Part B, Part D, Medigap/Advantage premiums and out-of-pocket costs. Includes planning-grade IRMAA surcharge estimation.
+- **Healthcare inflation**: Separate healthcare inflation assumption (default 5%/yr) applies to all healthcare cost components throughout the projection.
+- **Longevity stress testing**: Extends the projection timeline to age 90, 95, 100, or custom target. Works for primary member, spouse, or both.
+- **Long-term care stress cases**: Injects a configurable annual care-cost spike for a defined duration starting at a defined age. Based on Genworth 2024 national LTC cost averages.
+- **Survivor integration**: Healthcare cost modeling continues in survivor-appropriate form after a spouse death event.
+- **Comparison layer**: Side-by-side A/B comparison of healthcare/longevity runs with config diffs, outcome diffs, and year-by-year delta.
+
+### Services
+
+| Service | Responsibility |
+|---|---|
+| `healthcareAssumptionService` | Load and validate effective healthcare assumptions |
+| `preMedicareCostService` | Pre-Medicare cost estimation |
+| `medicareCostService` | Medicare-era cost estimation |
+| `healthcareInflationService` | Healthcare inflation application |
+| `longevityStressService` | Longevity timeline extension |
+| `longTermCareStressService` | LTC stress cost injection |
+| `healthcarePlanningService` | Main orchestration |
+| `healthcareComparisonService` | A/B comparison |
+
+### Key limitations (v1)
+
+- Planning-grade approximations; not medical, insurance, or Medicare enrollment advice
+- Annual time-step model; no monthly billing detail
+- Simplified healthcare inflation (single rate for all healthcare categories)
+- Simplified LTC stress (annual spike, not insurance policy modeling)
+- IRMAA: planning-grade single-tier surcharge, not exact IRMAA bracket calculation
+- No Medicaid planning or spend-down modeling
+- No AI interpretation of health risk factors
+
+### UI pages
+
+| Route | Description |
+|---|---|
+| `/app/healthcare-planning` | Index: prior runs + create new |
+| `/app/healthcare-planning/new` | Create new analysis |
+| `/app/healthcare-planning/[runId]` | Run detail with year-by-year table |
+| `/app/healthcare-planning/compare` | A/B comparison |
+| `/app/longevity-stress` | Longevity stress runs |
+| `/app/long-term-care-stress` | LTC stress runs |
