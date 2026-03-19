@@ -31,8 +31,8 @@ export default auth(function middleware(request: NextRequest) {
     response.headers.set(key, value);
   }
 
-  // Log incoming request (to stdout — captured by Coolify)
-  const logEntry = JSON.stringify({
+  // Log incoming request — use console.log (edge-safe; process.stdout is undefined in Edge Runtime)
+  console.log(JSON.stringify({
     timestamp: new Date().toISOString(),
     level: 'info',
     message: 'http.request',
@@ -42,8 +42,7 @@ export default auth(function middleware(request: NextRequest) {
       requestId,
       userAgent: request.headers.get('user-agent')?.slice(0, 100) ?? 'unknown',
     },
-  });
-  process.stdout.write(logEntry + '\n');
+  }));
 
   return response;
 });
