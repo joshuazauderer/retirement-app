@@ -610,3 +610,23 @@ model HousingPlanningRun {
   @@index([scenarioId])
   @@map("housing_planning_runs")
 }
+
+model AiInsightCache {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now())
+  generatedAt  DateTime @default(now())
+
+  cacheKey     String   @unique
+  householdId  String
+  runId        String
+  insightType  String
+  promptVersion String
+  provider     String
+
+  inputJson    Json
+  outputJson   Json
+
+  @@index([householdId])
+  @@index([runId])
+  @@map("ai_insight_cache")
+}

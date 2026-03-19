@@ -29,6 +29,7 @@ const NAV_ITEMS = [
   { href: "/app/legacy-planning", label: "Legacy" },
   { href: "/app/calculators", label: "Calculators" },
   { href: "/app/reports", label: "Reports" },
+  { href: "/app/ai-insights", label: "AI Insights" },
 ];
 
 export default async function AppLayout({
