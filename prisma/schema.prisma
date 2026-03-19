@@ -88,6 +88,7 @@ model Household {
   monteCarloRuns          MonteCarloRun[]
   withdrawalStrategyRuns  WithdrawalStrategyRun[]
   socialSecurityRuns      SocialSecurityRun[]
+  taxPlanningRuns         TaxPlanningRun[]
 
   @@map("households")
 }
@@ -427,6 +428,7 @@ model Scenario {
   monteCarloRuns          MonteCarloRun[]
   withdrawalStrategyRuns  WithdrawalStrategyRun[]
   socialSecurityRuns      SocialSecurityRun[]
+  taxPlanningRuns         TaxPlanningRun[]
   createdAt               DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -509,4 +511,29 @@ model SocialSecurityRun {
 
   @@index([householdId])
   @@map("social_security_runs")
+}
+
+model TaxPlanningRun {
+  id                  String    @id @default(cuid())
+  householdId         String
+  household           Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  scenarioId          String?
+  scenario            Scenario? @relation(fields: [scenarioId], references: [id], onDelete: SetNull)
+  label               String?
+  taxConfigJson       Json
+  snapshotJson        Json
+  summaryJson         Json
+  yearlyJson          Json
+  totalFederalTax     Decimal   @db.Decimal(18, 2)
+  totalStateTax       Decimal   @db.Decimal(18, 2)
+  totalLifetimeTax    Decimal   @db.Decimal(18, 2)
+  firstDepletionYear  Int?
+  success             Boolean
+  projectionStartYear Int
+  projectionEndYear   Int
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([householdId])
+  @@map("tax_planning_runs")
 }

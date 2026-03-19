@@ -18,6 +18,9 @@ const NAV_ITEMS = [
   { href: "/app/monte-carlo", label: "Monte Carlo" },
   { href: "/app/withdrawal-strategies", label: "Withdrawal" },
   { href: "/app/sequence-risk", label: "Seq. Risk" },
+  { href: "/app/social-security", label: "Social Sec." },
+  { href: "/app/tax-planning", label: "Tax Planning" },
+  { href: "/app/roth-conversions", label: "Roth" },
   { href: "/app/calculators", label: "Calculators" },
 ];
 
