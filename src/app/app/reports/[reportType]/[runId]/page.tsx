@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReportViewModel, ReportType } from '@/server/reports/types';
 import {
   formatReportDate,
@@ -12,8 +12,8 @@ interface PageParams {
   runId: string;
 }
 
-export default function ReportDetailPage({ params }: { params: Promise<PageParams> }) {
-  const { reportType, runId } = use(params);
+export default function ReportDetailPage({ params }: { params: PageParams }) {
+  const { reportType, runId } = params;
   const [viewModel, setViewModel] = useState<ReportViewModel | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
