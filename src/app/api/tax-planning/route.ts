@@ -12,6 +12,9 @@ import {
   validateTaxPlanningInput,
 } from '@/server/tax/taxPlanningService';
 import type { TaxPlanningRunInput } from '@/server/tax/types';
+import { simulationRateLimit, rateLimitHeaders } from '@/server/security/rateLimitService';
+import { handleApiError } from '@/server/errors/errorHandlerService';
+import { logger } from '@/server/logging/loggerService';
 
 async function getHouseholdId(userId: string): Promise<string | null> {
   const hh = await prisma.household.findFirst({ where: { primaryUserId: userId } });
@@ -38,6 +41,12 @@ export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  // Rate limit
+  const rl = simulationRateLimit(session.user.id);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429, headers: rateLimitHeaders(rl) });
+  }
+
   const householdId = await getHouseholdId(session.user.id);
   if (!householdId) return NextResponse.json({ error: 'No household found.' }, { status: 404 });
 
@@ -63,10 +72,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const run = await runTaxPlanningAnalysis(input);
+    logger.info('tax-planning.run', { userId: session.user.id, householdId });
     return NextResponse.json({ run }, { status: 201 });
   } catch (err) {
-    console.error('[tax-planning POST]', err);
-    const msg = err instanceof Error ? err.message : 'Failed to run tax analysis.';
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return handleApiError(err, { userId: session.user.id, householdId });
   }
 }

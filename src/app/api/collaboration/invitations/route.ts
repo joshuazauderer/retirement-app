@@ -13,6 +13,8 @@ import {
 } from '@/server/collaboration/invitationService';
 import { withPermission } from '@/server/collaboration/withPermission';
 import type { HouseholdRole, PermissionLevel } from '@/server/collaboration/types';
+import { generalRateLimit, rateLimitHeaders } from '@/server/security/rateLimitService';
+import { handleApiError } from '@/server/errors/errorHandlerService';
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -37,6 +39,12 @@ export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  // Rate limit
+  const rl = generalRateLimit(session.user.id);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429, headers: rateLimitHeaders(rl) });
+  }
+
   let body: { householdId?: string; email?: string; role?: string; permissionLevel?: string };
   try {
     body = await req.json();
@@ -52,19 +60,23 @@ export async function POST(req: NextRequest) {
   const [, err] = await withPermission(session.user.id, householdId, (p) => p.canManageAccess);
   if (err) return err;
 
-  const result = await createInvitation(
-    householdId,
-    session.user.id,
-    email,
-    role as HouseholdRole,
-    permissionLevel as PermissionLevel | undefined,
-  );
+  try {
+    const result = await createInvitation(
+      householdId,
+      session.user.id,
+      email,
+      role as HouseholdRole,
+      permissionLevel as PermissionLevel | undefined,
+    );
 
-  if (result.error) {
-    return NextResponse.json({ error: result.error }, { status: 400 });
+    if (result.error) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
+    }
+
+    return NextResponse.json({ invitation: result.invitation }, { status: 201 });
+  } catch (err2) {
+    return handleApiError(err2, { userId: session.user.id, householdId });
   }
-
-  return NextResponse.json({ invitation: result.invitation }, { status: 201 });
 }
 
 export async function DELETE(req: NextRequest) {

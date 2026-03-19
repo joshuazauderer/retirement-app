@@ -1,22 +1,15 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
     await prisma.$queryRaw`SELECT 1`;
     return NextResponse.json({
-      status: "ok",
+      status: 'ok',
       timestamp: new Date().toISOString(),
-      database: "connected",
+      version: process.env.npm_package_version ?? 'unknown',
     });
   } catch {
-    return NextResponse.json(
-      {
-        status: "error",
-        timestamp: new Date().toISOString(),
-        database: "disconnected",
-      },
-      { status: 503 }
-    );
+    return NextResponse.json({ status: 'degraded', timestamp: new Date().toISOString() }, { status: 503 });
   }
 }
