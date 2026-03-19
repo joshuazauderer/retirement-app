@@ -1,7 +1,13 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { SignOutButton } from "@/components/sign-out-button";
+
+const CopilotDrawerWrapper = dynamic(
+  () => import("@/components/copilot/CopilotDrawerWrapper"),
+  { ssr: false }
+);
 
 const NAV_ITEMS = [
   { href: "/app/overview", label: "Overview" },
@@ -30,6 +36,7 @@ const NAV_ITEMS = [
   { href: "/app/calculators", label: "Calculators" },
   { href: "/app/reports", label: "Reports" },
   { href: "/app/ai-insights", label: "AI Insights" },
+  { href: "/app/copilot", label: "Copilot" },
 ];
 
 export default async function AppLayout({
@@ -72,6 +79,7 @@ export default async function AppLayout({
         </div>
       </nav>
       <main className="max-w-7xl mx-auto px-6 py-8">{children}</main>
+      <CopilotDrawerWrapper />
     </div>
   );
 }

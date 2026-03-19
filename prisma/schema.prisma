@@ -611,6 +611,22 @@ model HousingPlanningRun {
   @@map("housing_planning_runs")
 }
 
+model ConversationSession {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  householdId String
+  userId      String
+
+  messagesJson Json     @default("[]")
+  contextJson  Json     @default("{}")
+
+  @@index([householdId])
+  @@index([userId])
+  @@map("conversation_sessions")
+}
+
 model AiInsightCache {
   id           String   @id @default(cuid())
   createdAt    DateTime @default(now())
