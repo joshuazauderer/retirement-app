@@ -15,6 +15,7 @@ import { withPermission } from '@/server/collaboration/withPermission';
 import type { HouseholdRole, PermissionLevel } from '@/server/collaboration/types';
 import { generalRateLimit, rateLimitHeaders } from '@/server/security/rateLimitService';
 import { handleApiError } from '@/server/errors/errorHandlerService';
+import { requireFeature } from '@/server/billing/featureGateService';
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -38,6 +39,19 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  // Feature gate — collaboration requires PRO or ADVISOR plan
+  try {
+    await requireFeature(session.user.id, 'collaboration');
+  } catch (err) {
+    if (err instanceof Error && err.message === 'FEATURE_GATED') {
+      return NextResponse.json(
+        { error: 'This feature requires a Pro subscription.', upgradeRequired: true, upgradeUrl: '/app/settings/billing' },
+        { status: 402 }
+      );
+    }
+    throw err;
+  }
 
   // Rate limit
   const rl = generalRateLimit(session.user.id);

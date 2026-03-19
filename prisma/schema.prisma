@@ -24,6 +24,7 @@ model User {
   householdMemberships    HouseholdMembership[]
   sentInvitations         HouseholdInvitation[]  @relation("InvitedBy")
   collaborationActivities CollaborationActivity[] @relation("ActivityActor")
+  subscription            UserSubscription?
 
   @@map("users")
 }
@@ -719,4 +720,27 @@ model CollaborationActivity {
   @@index([householdId])
   @@index([actorUserId])
   @@map("collaboration_activities")
+}
+
+model UserSubscription {
+  id                    String   @id @default(cuid())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  householdId           String?
+
+  stripeCustomerId      String?  @unique
+  stripeSubscriptionId  String?  @unique
+
+  planType              String   @default("FREE")   // PlanType
+  status                String   @default("FREE")   // SubscriptionStatus
+
+  currentPeriodEnd      DateTime?
+  cancelAtPeriodEnd     Boolean  @default(false)
+
+  @@index([stripeCustomerId])
+  @@map("user_subscriptions")
 }

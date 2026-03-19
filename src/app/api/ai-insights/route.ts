@@ -6,10 +6,24 @@ import type { InsightInput } from '@/server/ai/types';
 import { prisma } from '@/lib/prisma';
 import { aiRateLimit, rateLimitHeaders } from '@/server/security/rateLimitService';
 import { handleApiError } from '@/server/errors/errorHandlerService';
+import { requireFeature } from '@/server/billing/featureGateService';
 
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  // Feature gate — ai_insights requires PRO or ADVISOR plan
+  try {
+    await requireFeature(session.user.id, 'ai_insights');
+  } catch (err) {
+    if (err instanceof Error && err.message === 'FEATURE_GATED') {
+      return NextResponse.json(
+        { error: 'This feature requires a Pro subscription.', upgradeRequired: true, upgradeUrl: '/app/settings/billing' },
+        { status: 402 }
+      );
+    }
+    throw err;
+  }
 
   // Rate limit
   const rl = aiRateLimit(session.user.id);
