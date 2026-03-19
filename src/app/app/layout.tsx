@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { SignOutButton } from "@/components/sign-out-button";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const CopilotDrawerWrapper = dynamic(
   () => import("@/components/copilot/CopilotDrawerWrapper"),
@@ -11,6 +12,7 @@ const CopilotDrawerWrapper = dynamic(
 
 const NAV_ITEMS = [
   { href: "/app/overview", label: "Overview" },
+  { href: "/app/plan-health", label: "Plan Health" },
   { href: "/app/income", label: "Income" },
   { href: "/app/assets", label: "Assets" },
   { href: "/app/liabilities", label: "Liabilities" },
@@ -39,6 +41,7 @@ const NAV_ITEMS = [
   { href: "/app/copilot", label: "Copilot" },
   { href: "/app/settings/access", label: "Access" },
   { href: "/app/settings/billing", label: "Billing" },
+  { href: "/app/settings/notifications", label: "Alerts" },
 ];
 
 export default async function AppLayout({
@@ -72,7 +75,9 @@ export default async function AppLayout({
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {/* Notification bell — client component, polls for updates */}
+            <NotificationBell />
             <span className="text-sm text-slate-600">
               {session.user?.name || session.user?.email}
             </span>

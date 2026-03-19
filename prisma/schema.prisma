@@ -25,6 +25,8 @@ model User {
   sentInvitations         HouseholdInvitation[]  @relation("InvitedBy")
   collaborationActivities CollaborationActivity[] @relation("ActivityActor")
   subscription            UserSubscription?
+  notifications           Notification[]         @relation("UserNotifications")
+  notificationPreference  NotificationPreference? @relation("UserNotificationPreference")
 
   @@map("users")
 }
@@ -743,4 +745,45 @@ model UserSubscription {
 
   @@index([stripeCustomerId])
   @@map("user_subscriptions")
+}
+
+// ─── Phase 18: Notifications ──────────────────────────────────────────────────
+
+model Notification {
+  id          String    @id @default(cuid())
+  createdAt   DateTime  @default(now())
+
+  userId      String
+  user        User      @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  householdId String?
+
+  type        String    // NotificationType
+  title       String
+  body        String    @db.Text
+  metadataJson Json     @default("{}")
+
+  isRead      Boolean   @default(false)
+  readAt      DateTime?
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  id          String   @id @default(cuid())
+  updatedAt   DateTime @updatedAt
+
+  userId      String   @unique
+  user        User     @relation("UserNotificationPreference", fields: [userId], references: [id], onDelete: Cascade)
+
+  emailDigest         Boolean @default(true)
+  digestFrequency     String  @default("WEEKLY") // DigestFrequency
+  planRiskAlerts      Boolean @default(true)
+  collaborationAlerts Boolean @default(true)
+  billingAlerts       Boolean @default(true)
+  simulationAlerts    Boolean @default(false)
+
+  @@map("notification_preferences")
 }
