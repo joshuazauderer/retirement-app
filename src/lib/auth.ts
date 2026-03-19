@@ -31,6 +31,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!user || !user.password) return null;
 
+        // Block closed accounts from logging in
+        if (user.closedAt) return null;
+
         const valid = await bcrypt.compare(parsed.data.password, user.password);
         if (!valid) return null;
 

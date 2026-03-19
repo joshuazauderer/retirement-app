@@ -14,6 +14,7 @@ model User {
   emailVerified DateTime?
   password      String?
   image         String?
+  closedAt      DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -27,8 +28,22 @@ model User {
   subscription            UserSubscription?
   notifications           Notification[]         @relation("UserNotifications")
   notificationPreference  NotificationPreference? @relation("UserNotificationPreference")
+  passwordResetTokens     PasswordResetToken[]
 
   @@map("users")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@map("password_reset_tokens")
 }
 
 model Account {

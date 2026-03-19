@@ -99,12 +99,15 @@ export const NAV_SECTIONS: NavSection[] = [
 
 // Settings items — shown in user menu, not top nav
 export const USER_MENU_ITEMS: NavSubItem[] = [
-  { href: "/app/settings/access",  label: "Access" },
-  { href: "/app/settings/billing", label: "Billing" },
+  { href: "/app/settings/security", label: "Security" },
+  { href: "/app/settings/access",   label: "Access" },
+  { href: "/app/settings/billing",  label: "Billing" },
 ];
 
 // Settings sidebar items (shown when path starts with /app/settings)
 export const SETTINGS_SUB_ITEMS: NavSubItem[] = [
+  { href: "/app/settings/security",      label: "Security" },
+  { href: "/app/settings/account",       label: "Account" },
   { href: "/app/settings/access",        label: "Access" },
   { href: "/app/settings/billing",       label: "Billing" },
   { href: "/app/settings/notifications", label: "Notifications" },
