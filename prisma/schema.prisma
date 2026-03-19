@@ -87,6 +87,7 @@ model Household {
   scenarios               Scenario[]
   monteCarloRuns          MonteCarloRun[]
   withdrawalStrategyRuns  WithdrawalStrategyRun[]
+  socialSecurityRuns      SocialSecurityRun[]
 
   @@map("households")
 }
@@ -425,6 +426,7 @@ model Scenario {
   simulationRuns          SimulationRun[]
   monteCarloRuns          MonteCarloRun[]
   withdrawalStrategyRuns  WithdrawalStrategyRun[]
+  socialSecurityRuns      SocialSecurityRun[]
   createdAt               DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -487,4 +489,24 @@ model MonteCarloRun {
 
   @@index([householdId])
   @@map("monte_carlo_runs")
+}
+
+model SocialSecurityRun {
+  id                   String    @id @default(cuid())
+  householdId          String
+  household            Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  scenarioId           String?
+  scenario             Scenario? @relation(fields: [scenarioId], references: [id], onDelete: SetNull)
+  label                String?
+  inputJson            Json
+  resultJson           Json
+  totalLifetimeBenefit Decimal   @db.Decimal(18, 2)
+  breakEvenAge         Int?
+  projectionStartYear  Int
+  projectionEndYear    Int
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([householdId])
+  @@map("social_security_runs")
 }
