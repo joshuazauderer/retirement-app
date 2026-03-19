@@ -216,6 +216,11 @@ export default function AssumptionsPage() {
                   max="120"
                   placeholder="e.g. 90"
                 />
+                {errors.longevityTargetPrimary && (
+                  <p className="text-xs text-red-500">
+                    {errors.longevityTargetPrimary.message}
+                  </p>
+                )}
               </div>
               <div className="space-y-1">
                 <Label>Spouse (age)</Label>
@@ -228,6 +233,11 @@ export default function AssumptionsPage() {
                   max="120"
                   placeholder="e.g. 92"
                 />
+                {errors.longevityTargetSpouse && (
+                  <p className="text-xs text-red-500">
+                    {errors.longevityTargetSpouse.message}
+                  </p>
+                )}
               </div>
             </div>
           </div>

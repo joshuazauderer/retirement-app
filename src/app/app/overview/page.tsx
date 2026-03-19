@@ -108,9 +108,9 @@ export default async function OverviewPage() {
       href: "/app/assets",
     },
     {
-      label: "Monthly Retirement Spend",
+      label: "Annual Expenses",
       value: overview.monthlyRetirementSpending
-        ? fmt(overview.monthlyRetirementSpending)
+        ? fmt(overview.monthlyRetirementSpending * 12)
         : "—",
       href: "/app/expenses",
     },
