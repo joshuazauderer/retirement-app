@@ -90,6 +90,7 @@ model Household {
   socialSecurityRuns      SocialSecurityRun[]
   taxPlanningRuns         TaxPlanningRun[]
   healthcarePlanningRuns  HealthcarePlanningRun[]
+  housingPlanningRuns     HousingPlanningRun[]
 
   @@map("households")
 }
@@ -431,6 +432,7 @@ model Scenario {
   socialSecurityRuns      SocialSecurityRun[]
   taxPlanningRuns         TaxPlanningRun[]
   healthcarePlanningRuns  HealthcarePlanningRun[]
+  housingPlanningRuns     HousingPlanningRun[]
   createdAt               DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -571,4 +573,40 @@ model HealthcarePlanningRun {
   @@index([householdId])
   @@index([scenarioId])
   @@map("healthcare_planning_runs")
+}
+
+model HousingPlanningRun {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  scenarioId  String?
+  scenario    Scenario? @relation(fields: [scenarioId], references: [id], onDelete: SetNull)
+
+  label       String
+  strategy    String    // 'stay_in_place' | 'downsize' | 'relocate' | 'rent'
+
+  housingConfigJson Json
+  summaryJson       Json
+  yearlyJson        Json
+  equityReleaseJson Json?
+  legacyJson        Json?
+
+  // Denormalized for queries
+  netReleasedEquity     Float
+  endingFinancialAssets Float
+  projectedNetEstate    Float
+  success               Boolean
+  firstDepletionYear    Int?
+  hasDownsizing         Boolean @default(false)
+  hasRelocation         Boolean @default(false)
+  projectionStartYear   Int
+  projectionEndYear     Int
+
+  @@index([householdId])
+  @@index([scenarioId])
+  @@map("housing_planning_runs")
 }

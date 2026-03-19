@@ -220,3 +220,49 @@ Phase 7 adds 42 tests covering:
 | `/app/healthcare-planning/compare` | A/B comparison |
 | `/app/longevity-stress` | Longevity stress runs |
 | `/app/long-term-care-stress` | LTC stress runs |
+
+## Phase 11 — Housing Decisions + Downsizing + Relocation + Legacy Planning
+
+### What's included
+
+- **Stay-in-place baseline**: Models current housing cost with annual inflation and property value appreciation.
+- **Downsizing**: Models home sale with selling costs, mortgage payoff, optional replacement home, and move costs. Net released equity enters the investable asset pool.
+- **Relocation**: Models move to a new state/area with different housing cost profile. Provides state-tax awareness note.
+- **Equity release**: Net sale proceeds enter the balance sheet explicitly — affects withdrawals, depletion timing, and legacy.
+- **Legacy/estate projection**: End-of-plan financial assets + real-estate equity - liabilities = projected net estate.
+- **Gifting**: Optional annual or one-time gifting reduces estate and investable assets.
+- **Comparison**: A/B comparison of housing runs with config diffs, outcome diffs, and year-by-year housing cost delta.
+
+### Services
+
+| Service | Responsibility |
+|---|---|
+| `housingAssumptionService` | Load/validate effective housing assumptions |
+| `downsizingService` | Downsize event: net proceeds, replacement home |
+| `relocationService` | Relocation: cost change, state-tax note |
+| `equityReleaseService` | Balance-sheet integration of equity proceeds |
+| `housingPlanningService` | Main orchestration |
+| `legacyProjectionService` | End-of-plan estate estimation |
+| `housingComparisonService` | A/B run comparison |
+
+### Key limitations (v1)
+
+- Planning-grade approximations; not real-estate transaction software
+- Not legal estate-planning software; no trust, probate, or estate-tax modeling
+- Annual time-step model; no monthly payment detail
+- Simplified mortgage amortization (planning approximation)
+- No reverse mortgage modeling
+- No gift-tax law modeling
+- No actuarial mortality for exact survivor transitions
+- No AI interpretation yet
+
+### UI pages
+
+| Route | Description |
+|---|---|
+| `/app/housing-planning` | Index: prior runs + create new |
+| `/app/housing-planning/new` | Create new analysis |
+| `/app/housing-planning/[runId]` | Run detail with year-by-year table |
+| `/app/housing-planning/compare` | A/B comparison |
+| `/app/downsizing` | Downsizing educational content + runs |
+| `/app/legacy-planning` | Legacy/estate projection + runs |

@@ -24,6 +24,9 @@ const NAV_ITEMS = [
   { href: "/app/healthcare-planning", label: "Healthcare" },
   { href: "/app/longevity-stress", label: "Longevity" },
   { href: "/app/long-term-care-stress", label: "LTC Stress" },
+  { href: "/app/housing-planning", label: "Housing Plan" },
+  { href: "/app/downsizing", label: "Downsizing" },
+  { href: "/app/legacy-planning", label: "Legacy" },
   { href: "/app/calculators", label: "Calculators" },
 ];
 
