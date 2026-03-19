@@ -802,3 +802,19 @@ model NotificationPreference {
 
   @@map("notification_preferences")
 }
+
+model ContactRequest {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  name      String
+  email     String
+  subject   String?
+  message   String   @db.Text
+
+  ipAddress String?
+  userAgent String?
+
+  @@index([email])
+  @@map("contact_requests")
+}

@@ -121,3 +121,78 @@ export async function sendAccountClosureEmail(params: {
     return { success: false, error: 'Failed to send email' };
   }
 }
+
+export async function sendContactRequestEmail(params: {
+  name: string;
+  email: string;
+  subject: string | null;
+  message: string;
+  submittedAt: Date;
+}): Promise<SendEmailResult> {
+  try {
+    const { name, email, subject, message, submittedAt } = params;
+    const displaySubject = subject ?? '(no subject)';
+    const formattedDate = submittedAt.toLocaleString('en-US', {
+      dateStyle: 'full',
+      timeStyle: 'short',
+      timeZone: 'America/Chicago',
+    });
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>New contact request — RetirePlan</title></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; color: #1e293b;">
+  <div style="margin-bottom: 24px;">
+    <h1 style="font-size: 22px; font-weight: 700; margin: 0 0 4px;">RetirePlan</h1>
+    <p style="font-size: 13px; color: #64748b; margin: 0;">New contact form submission</p>
+  </div>
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+    <tr>
+      <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-size: 13px; color: #64748b; width: 120px; vertical-align: top;">From</td>
+      <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-size: 14px; font-weight: 500; color: #0f172a;">${name} &lt;${email}&gt;</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-size: 13px; color: #64748b; vertical-align: top;">Subject</td>
+      <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #0f172a;">${displaySubject}</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-size: 13px; color: #64748b; vertical-align: top;">Submitted</td>
+      <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #0f172a;">${formattedDate}</td>
+    </tr>
+  </table>
+  <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+    <p style="font-size: 13px; color: #64748b; margin: 0 0 8px; font-weight: 500;">MESSAGE</p>
+    <p style="font-size: 14px; color: #1e293b; line-height: 1.7; margin: 0; white-space: pre-wrap;">${message}</p>
+  </div>
+  <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
+  <p style="color: #94a3b8; font-size: 12px; margin: 0;">
+    RetirePlan — Contact Form Notification<br>
+    Reply directly to this email to respond to ${name}.
+  </p>
+</body>
+</html>`;
+
+    const text = `New contact request — RetirePlan\n\nFrom: ${name} <${email}>\nSubject: ${displaySubject}\nSubmitted: ${formattedDate}\n\nMessage:\n${message}`;
+
+    const result = await sendEmail({
+      to: 'joshua.zauderer@gmail.com',
+      subject: `[RetirePlan Contact] ${displaySubject}`,
+      html,
+      text,
+    });
+
+    if (!result.success) {
+      logger.error('Failed to send contact request email', { email, error: result.error });
+      return { success: false, error: 'Failed to send email' };
+    }
+
+    logger.info('Contact request email sent', { from: email });
+    return { success: true };
+  } catch (error) {
+    logger.error('Failed to send contact request email', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return { success: false, error: 'Failed to send email' };
+  }
+}
