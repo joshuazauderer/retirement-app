@@ -43,7 +43,9 @@ export async function buildSimulationSnapshot(
   const currentYear = new Date().getFullYear();
 
   // Global return rate from planning assumptions (stored as decimal fraction e.g. 0.07)
-  const globalReturn = parseDecimalRate(assumptions?.expectedPortfolioReturn ?? 0.07);
+  // Sanity clamp: if value > 1.0 it was entered as a percentage (e.g. "7" for 7%) not a decimal.
+  const _globalReturnRaw = parseDecimalRate(assumptions?.expectedPortfolioReturn ?? 0.07);
+  const globalReturn = _globalReturnRaw > 1.0 ? _globalReturnRaw / 100 : _globalReturnRaw;
 
   // Determine projection end year from member longevity
   // Use parseInt on the ISO string to avoid timezone-shifting birth year.
@@ -158,9 +160,10 @@ export async function buildSimulationSnapshot(
   // Normalize expense profile
   // All fields in schema are monthly — multiply by 12 to annualize
   // inflationAssumption: Decimal(5,4) — stored as fraction
-  const inflationRate = expenseProfile?.inflationAssumption
+  const _inflationRaw = expenseProfile?.inflationAssumption
     ? parseDecimalRate(expenseProfile.inflationAssumption)
     : parseDecimalRate(assumptions?.inflationRate ?? 0.03);
+  const inflationRate = _inflationRaw > 1.0 ? _inflationRaw / 100 : _inflationRaw;
 
   const normalizedExpenses: NormalizedExpenseProfile = expenseProfile
     ? {
@@ -207,12 +210,11 @@ export async function buildSimulationSnapshot(
 
   // Planning assumptions
   // assumedTaxRate: Decimal(5,4) stored as fraction (e.g. 0.22 = 22%)
+  const _taxRateRaw = parseDecimalRate(assumptions?.assumedTaxRate ?? 0.22);
   const normalizedAssumptions: NormalizedPlanningAssumptions = {
-    inflationRate: parseDecimalRate(assumptions?.inflationRate ?? 0.03),
-    expectedPortfolioReturn: globalReturn,
-    assumedEffectiveTaxRate: parseDecimalRate(
-      assumptions?.assumedTaxRate ?? 0.22
-    ),
+    inflationRate, // already clamped above
+    expectedPortfolioReturn: globalReturn, // already clamped above
+    assumedEffectiveTaxRate: _taxRateRaw > 1.0 ? _taxRateRaw / 100 : _taxRateRaw,
     longevityTargets: Object.fromEntries(
       normalizedMembers.map((m) => [m.memberId, m.lifeExpectancy])
     ),
