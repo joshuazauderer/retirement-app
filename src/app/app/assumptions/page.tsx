@@ -34,7 +34,8 @@ export default function AssumptionsPage() {
     reset,
     formState: { errors, isSubmitting },
   } = useForm<PlanningAssumptionsInput>({
-    resolver: zodResolver(planningAssumptionsSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(planningAssumptionsSchema) as any,
     defaultValues: {
       inflationRate: 0.03,
       expectedPortfolioReturn: 0.07,
