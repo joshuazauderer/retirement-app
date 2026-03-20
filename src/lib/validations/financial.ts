@@ -57,7 +57,16 @@ export const assetAccountSchema = z.object({
   employerMatchAmount: z.string().optional(),
   employerMatchPercent: z.string().optional(),
   taxTreatment: z.enum(["TAXABLE", "TAX_DEFERRED", "TAX_FREE", "MIXED"]),
-  expectedReturnRate: z.string().optional(),
+  expectedReturnRate: z
+    .string()
+    .optional()
+    .refine(
+      (v) =>
+        v === undefined ||
+        v === "" ||
+        (!isNaN(Number(v)) && Number(v) >= 0 && Number(v) <= 1),
+      "Return rate must be a decimal between 0 and 1 (e.g. 0.07 for 7%)"
+    ),
   notes: z.string().optional(),
   isActive: z.boolean().default(true),
 });

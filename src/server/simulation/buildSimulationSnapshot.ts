@@ -87,7 +87,10 @@ export async function buildSimulationSnapshot(
       type: src.type,
       label: src.label,
       annualAmount: annualizeAmount(Number(src.amount), src.frequency),
-      growthRate: parseDecimalRate(src.annualGrowthRate),
+      growthRate: (() => {
+        const raw = parseDecimalRate(src.annualGrowthRate);
+        return raw > 1.0 ? raw / 100 : raw;
+      })(),
       taxable: src.taxable,
       startYear: src.startDate ? new Date(src.startDate).getFullYear() : null,
       endYear: src.endDate ? new Date(src.endDate).getFullYear() : null,
@@ -118,9 +121,14 @@ export async function buildSimulationSnapshot(
               acc.contributionFrequency
             )
           : 0,
-      expectedReturnRate: acc.expectedReturnRate
-        ? parseDecimalRate(acc.expectedReturnRate)
-        : globalReturn,
+      expectedReturnRate: (() => {
+        if (!acc.expectedReturnRate) return globalReturn;
+        const raw = parseDecimalRate(acc.expectedReturnRate);
+        // Sanity clamp: if rate > 1.0 it was likely entered as a percentage
+        // (e.g. "7" meaning 7%) rather than a decimal fraction (0.07).
+        // Auto-correct by dividing by 100 so existing bad data still projects correctly.
+        return raw > 1.0 ? raw / 100 : raw;
+      })(),
       isRetirementAccount: [
         "TRADITIONAL_401K",
         "ROTH_401K",
