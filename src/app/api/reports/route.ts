@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { listReportDefinitions } from '@/server/reports/reportDefinitionService';
+import { requireFeature } from '@/server/billing/featureGateService';
 import {
   validateReportRequest,
   assembleHouseholdSummaryReport,
@@ -83,6 +84,19 @@ export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Feature gate — reports_export requires PRO or ADVISOR plan
+  try {
+    await requireFeature(session.user.id, 'reports_export');
+  } catch (err) {
+    if (err instanceof Error && err.message === 'FEATURE_GATED') {
+      return NextResponse.json(
+        { error: 'Report generation requires a Pro subscription.', upgradeRequired: true, upgradeUrl: '/app/settings/billing' },
+        { status: 402 }
+      );
+    }
+    throw err;
   }
 
   const householdId = await getHouseholdId(session.user.id);

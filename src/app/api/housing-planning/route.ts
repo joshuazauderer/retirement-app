@@ -15,6 +15,7 @@ import type { HousingPlanningInput } from '@/server/housing/types';
 import { simulationRateLimit, rateLimitHeaders } from '@/server/security/rateLimitService';
 import { handleApiError } from '@/server/errors/errorHandlerService';
 import { logger } from '@/server/logging/loggerService';
+import { requireFeature } from '@/server/billing/featureGateService';
 
 async function getHouseholdId(userId: string): Promise<string | null> {
   const hh = await prisma.household.findFirst({ where: { primaryUserId: userId } });
@@ -24,6 +25,19 @@ async function getHouseholdId(userId: string): Promise<string | null> {
 export async function GET() {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  // Feature gate — housing_planning requires PRO or ADVISOR plan
+  try {
+    await requireFeature(session.user.id, 'housing_planning');
+  } catch (err) {
+    if (err instanceof Error && err.message === 'FEATURE_GATED') {
+      return NextResponse.json(
+        { error: 'Housing planning requires a Pro subscription.', upgradeRequired: true, upgradeUrl: '/app/settings/billing' },
+        { status: 402 }
+      );
+    }
+    throw err;
+  }
 
   const householdId = await getHouseholdId(session.user.id);
   if (!householdId) return NextResponse.json({ error: 'No household found.' }, { status: 404 });
@@ -40,6 +54,19 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  // Feature gate — housing_planning requires PRO or ADVISOR plan
+  try {
+    await requireFeature(session.user.id, 'housing_planning');
+  } catch (err) {
+    if (err instanceof Error && err.message === 'FEATURE_GATED') {
+      return NextResponse.json(
+        { error: 'Housing planning requires a Pro subscription.', upgradeRequired: true, upgradeUrl: '/app/settings/billing' },
+        { status: 402 }
+      );
+    }
+    throw err;
+  }
 
   // Rate limit
   const rl = simulationRateLimit(session.user.id);

@@ -15,10 +15,18 @@ export default function HealthcarePlanningPage() {
   const [runBId, setRunBId] = useState('');
   const [comparing, setComparing] = useState(false);
 
+  const [upgradeRequired, setUpgradeRequired] = useState(false);
+
   useEffect(() => {
     fetch('/api/healthcare-planning')
-      .then((r) => r.json())
-      .then((d) => setRuns(d.runs ?? []))
+      .then(async (r) => {
+        const d = await r.json();
+        if (r.status === 402 || d.upgradeRequired) {
+          setUpgradeRequired(true);
+        } else {
+          setRuns(d.runs ?? []);
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -32,6 +40,17 @@ export default function HealthcarePlanningPage() {
   if (loading) {
     return <div className="text-slate-400 py-12 text-center">Loading healthcare planning runs...</div>;
   }
+
+  if (upgradeRequired) return (
+    <div className="max-w-lg mx-auto mt-20 text-center space-y-4">
+      <div className="text-4xl">🔒</div>
+      <h2 className="text-2xl font-bold text-slate-900">Pro Feature</h2>
+      <p className="text-slate-500">Healthcare planning requires a Pro or Advisor subscription.</p>
+      <a href="/app/settings/billing" className="inline-block mt-2 px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">
+        Upgrade to Pro
+      </a>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
