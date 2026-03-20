@@ -1045,6 +1045,470 @@ Make 6 rapid POST requests to `/api/simulations` (or any endpoint) in quick succ
 
 ---
 
+---
+
+## Section 26 — Guided Dashboard: Plan Health Hero
+
+**URL:** `http://acw8co8o0w8c48k444ogsgkw.31.220.51.123.sslip.io/app/overview`
+
+This tests the new `PlanHealthHeroCard` at the top of the redesigned dashboard. Run this section **after** completing Sections 1–10 so simulation data exists.
+
+### 26.1 Hero Card Present and Dominant
+
+**What You Should See:**
+- The **first visible element** below the page title is the Plan Health Hero card
+- The card is visually distinct from the rest of the page (coloured background based on tier)
+- A **score ring** (SVG circle) displays the numeric health score (e.g., `72`)
+- A **status badge** is visible: one of `On Track`, `Needs Attention`, `At Risk`, or `Incomplete`
+- A **one-sentence explanation** is present below the badge (e.g., "Your plan is on track but has meaningful gaps…")
+
+### 26.2 Score Is Reasonable
+
+**What You Should See:**
+- Score between **40 and 85** for the Martinez household with full data + 1 simulation
+- Score is NOT `0` (that would indicate the health score service failed)
+- Score is NOT `100` (that would indicate all components are maxed — unlikely at this stage)
+
+### 26.3 Primary CTA Works
+
+Click **"See What To Do Next →"**.
+
+**What You Should See:**
+- Page scrolls to or navigates to the `#next-steps` section (the NextActionsPanel)
+
+### 26.4 Secondary CTA Works
+
+Click **"View Full Analysis"**.
+
+**What You Should See:**
+- Navigates to `/app/plan-health`
+- Plan health detail page loads without error
+
+### 26.5 Incomplete User State
+
+> Test this by creating a second test account with no data entered.
+
+For an account with no financial data:
+
+**What You Should See:**
+- Score ring is replaced with a **📋 icon** (no score available)
+- Status badge shows: `Incomplete`
+- Explanation: "Complete your core plan details to generate your retirement health score."
+- CTA still present and functional
+
+---
+
+## Section 27 — Guided Dashboard: Recommended Next Steps
+
+**URL:** `http://acw8co8o0w8c48k444ogsgkw.31.220.51.123.sslip.io/app/overview#next-steps`
+
+Tests the `NextActionsPanel` — the prioritized action list.
+
+### 27.1 Actions Are Present
+
+**What You Should See:**
+- Between **2 and 4** action cards displayed
+- Each card has: a **title**, a **one-sentence description**, and a **CTA button**
+- The first action is visually marked **"Priority"** (blue badge)
+
+### 27.2 Actions Are Contextual
+
+For the Martinez household (simulation run, no Monte Carlo, FREE plan):
+
+**Expected actions (order may vary):**
+- An action referencing running **Monte Carlo** or upgrading to PRO for Monte Carlo access
+- An action referencing **Social Security** review (no SS analysis run yet)
+- Possibly a health-score-driven action (e.g., healthcare planning)
+
+**What You Should NOT See:**
+- "Finish setting up your plan" (core data is complete)
+- "Run your first retirement projection" (simulation already run)
+
+### 27.3 CTA Buttons Navigate Correctly
+
+Click at least one CTA button:
+
+**What You Should See:**
+- Navigation to the correct destination (e.g., `/app/monte-carlo`, `/app/social-security`, `/app/settings/billing`)
+- No 404 or broken link
+
+### 27.4 Upgrade Action for FREE Users
+
+For a FREE-plan account with simulation run and no Monte Carlo:
+
+**What You Should See:**
+- An action with category `upgrade` titled something like "See how your plan holds up in any market"
+- CTA button: **"Upgrade to Pro →"**
+- Links to `/app/settings/billing`
+
+---
+
+## Section 28 — Guided Dashboard: Plan Completion Tracker
+
+**URL:** `http://acw8co8o0w8c48k444ogsgkw.31.220.51.123.sslip.io/app/overview`
+
+Tests the `PlanCompletionCard`.
+
+### 28.1 Completion Percentage Is Correct
+
+For the Martinez household (all data entered + 1 simulation):
+
+**What You Should See:**
+- Completion percentage between **60% and 80%**
+- Progress bar fills proportionally to the percentage
+- Progress bar is **green** at ≥80%, **blue** at ≥50%, **amber** below 50%
+
+### 28.2 Checklist Items Are Accurate
+
+**What You Should See:**
+- ✅ **Household Setup** — complete (green dot)
+- ✅ **Income** — complete
+- ✅ **Assets** — complete
+- ✅ **Liabilities** — complete
+- ✅ **Expenses** — complete
+- ✅ **Benefits** — complete
+- ✅ **Housing** — complete
+- ✅ **Insurance** — complete (or not_started if insurance not set)
+- ✅ **Assumptions** — complete
+- ⚠️ **Core Projection Run** — complete (simulation run in Section 10)
+- ○ **Monte Carlo Analysis** — not started
+- ○ **Social Security Reviewed** — not started
+- ○ **Tax Planning Reviewed** — may be complete (Section 14)
+- ○ **Withdrawal Strategy Reviewed** — not started
+
+### 28.3 Items Are Clickable
+
+Click any incomplete item.
+
+**What You Should See:**
+- Navigates to the correct page (e.g., clicking Monte Carlo → `/app/monte-carlo`)
+
+### 28.4 CTA Button Works
+
+Click **"Continue Setup →"** (or "Plan Complete ✓" if 100%).
+
+**What You Should See:**
+- Navigates to `/app/income` (first data entry page)
+
+---
+
+## Section 29 — Guided Dashboard: Key Metrics Grid
+
+**URL:** `http://acw8co8o0w8c48k444ogsgkw.31.220.51.123.sslip.io/app/overview`
+
+Tests the `DashboardMetricsGrid`.
+
+### 29.1 All Five Metric Cards Present
+
+**What You Should See:**
+- Exactly **5 metric cards** in a responsive grid
+- Card labels: `Target Retirement Age`, `Years Funded`, `Projected Ending Balance`, `Monte Carlo Success Rate`, `Expected Return Rate`
+
+### 29.2 Values Are Correct
+
+For the Martinez household:
+
+| Metric | Expected Value | Pass Criteria |
+|---|---|---|
+| Target Retirement Age | `65` | Matches Carlos's retirement target age from onboarding |
+| Years Funded | `35 yrs` (approx) | Between 25 and 40 |
+| Projected Ending Balance | $500K–$4M | Any positive value, not trillions |
+| Monte Carlo Success Rate | `Not run yet` | If no MC run; or 80–95% if MC completed |
+| Expected Return Rate | `7.0%` | Matches assumptions (0.07 entered = 7%) |
+
+### 29.3 Unavailable Metrics Show Graceful Fallback
+
+For metrics not yet calculated:
+
+**What You Should See:**
+- Text: `Not run yet` or `Not configured` (not `undefined`, not blank, not an error)
+- Card uses a lighter, muted style
+
+### 29.4 Cards Are Clickable
+
+Click any metric card.
+
+**What You Should See:**
+- Navigates to the relevant detail page (e.g., Projected Ending Balance → `/app/simulations`)
+
+---
+
+## Section 30 — Guided Dashboard: Scenario Snapshot
+
+**URL:** `http://acw8co8o0w8c48k444ogsgkw.31.220.51.123.sslip.io/app/overview`
+
+Tests the `ScenarioSnapshotCard`.
+
+### 30.1 Scenarios Are Listed (Post Section 11)
+
+After creating the Baseline and "Early Retirement — Age 62" scenario in Section 11:
+
+**What You Should See:**
+- At least **1–2 scenario rows** in the snapshot card
+- Baseline scenario marked with a **"Baseline"** badge
+- Each row shows a **name** and an **outcome** (e.g., "Ends with $2.1M" or "May run out in 2055")
+
+### 30.2 No Scenarios State
+
+For a fresh account with no scenarios:
+
+**What You Should See:**
+- Message: "Create scenarios to see how different choices affect your retirement"
+- CTA: **"Create First Scenario →"**
+- Links to `/app/scenarios`
+
+### 30.3 Explore Scenarios CTA Works
+
+Click **"Explore Scenarios →"**.
+
+**What You Should See:**
+- Navigates to `/app/scenarios`
+- Scenario list page loads correctly
+
+---
+
+## Section 31 — Guided Dashboard: Data Freshness
+
+**URL:** `http://acw8co8o0w8c48k444ogsgkw.31.220.51.123.sslip.io/app/overview`
+
+Tests the `DataFreshnessCard`.
+
+### 31.1 Data Freshness Is Shown
+
+**What You Should See:**
+- Card titled **"Your Financial Data"**
+- A status badge showing either:
+  - `Updated today` / `Updated X days ago` — if data was recently saved (it was, just now in Sections 2–8)
+  - `⚠ Some data may be outdated` — if any section was updated >90 days ago
+
+### 31.2 Per-Section Timestamps Are Shown
+
+**What You Should See:**
+- Up to 4 data items listed: Income, Asset Balances, Liabilities, Expenses
+- Each shows a relative timestamp: `Today`, `Xd ago`, or `Xmo ago`
+- Items entered in Sections 2–8 today show **"Today"** or **"0d ago"**
+
+### 31.3 Update My Data CTA Works
+
+Click **"Update My Data →"**.
+
+**What You Should See:**
+- Navigates to `/app/income`
+
+---
+
+## Section 32 — Guided Dashboard: Next Review Card
+
+**URL:** `http://acw8co8o0w8c48k444ogsgkw.31.220.51.123.sslip.io/app/overview`
+
+Tests the `NextReviewCard`.
+
+### 32.1 Review Cadence Shown
+
+**What You Should See:**
+- Card titled **"Next Plan Review"**
+- Review cadence shown based on notification preferences (default: Monthly)
+- If simulation was just run today: "Next review: [date ~1 month from now]" and `isOverdue: false`
+- If no simulation has ever been run: "⚠ Review overdue"
+
+### 32.2 Review Now CTA Works
+
+Click **"Review Now →"**.
+
+**What You Should See:**
+- Navigates to `/app/simulations`
+
+### 32.3 Set Reminder CTA Works
+
+Click **"Set Reminder"**.
+
+**What You Should See:**
+- Navigates to `/app/settings/notifications`
+
+---
+
+## Section 33 — Guided Dashboard: AI Insight Summary
+
+**URL:** `http://acw8co8o0w8c48k444ogsgkw.31.220.51.123.sslip.io/app/overview`
+
+Tests the `AIInsightSummaryCard`.
+
+### 33.1 Insight Is Present
+
+**What You Should See:**
+- Card titled **"Insights About Your Plan"**
+- A **headline sentence** describing the plan's current state (e.g., "Your plan is on solid ground with room to improve.")
+- An optional **detail sentence** with a specific action or observation
+- If an AI insight is cached: a small **"AI"** badge appears in the card header
+
+### 33.2 Fallback Insight Without AI
+
+If no AI insight cache exists (no OpenAI/Anthropic key configured, or no insight has been generated):
+
+**What You Should See:**
+- A **deterministic** insight based on the health score tier
+- No error message, no spinner stuck loading
+- The card renders with appropriate text for the current tier (e.g., GOOD tier → "Your plan is on solid ground with room to improve.")
+
+### 33.3 CTAs Work
+
+Click **"Ask Copilot →"** — navigates to `/app/copilot`.
+
+Click **"View All Insights"** — navigates to `/app/ai-insights`.
+
+---
+
+## Section 34 — Guided Dashboard: Alerts Summary
+
+**URL:** `http://acw8co8o0w8c48k444ogsgkw.31.220.51.123.sslip.io/app/overview`
+
+Tests the `AlertsSummaryCard`.
+
+### 34.1 No Alerts State
+
+For a healthy plan with no triggered alerts:
+
+**What You Should See:**
+- Card titled **"Alerts"**
+- Green check mark: "No active alerts — your plan looks good."
+
+### 34.2 Alerts Shown When Present
+
+If a `PLAN_RISK_HIGH` or `PORTFOLIO_DEPLETION_ALERT` notification exists in the DB:
+
+**What You Should See:**
+- Alert cards listed with colour-coded severity (🔴 Critical, 🟠 High, 🟡 Medium)
+- Unread count badge (red circle with number) on the card title
+- Timestamps shown as relative time ("Today", "2d ago")
+
+### 34.3 View All Alerts CTA Works
+
+Click **"View All Alerts →"** (or "View All →").
+
+**What You Should See:**
+- Navigates to `/app/notifications`
+
+---
+
+## Section 35 — Guided Dashboard: Upgrade Value Card
+
+**URL:** `http://acw8co8o0w8c48k444ogsgkw.31.220.51.123.sslip.io/app/overview`
+
+Tests the `UpgradeValueCard`.
+
+### 35.1 Visible for FREE Users
+
+For a FREE-plan account:
+
+**What You Should See:**
+- Card at the **bottom of the dashboard** (Row 6) with an indigo/purple gradient background
+- Headline: **"Unlock deeper planning tools"**
+- Body text mentioning Monte Carlo, AI insights, and unlimited scenarios
+- Feature badges listing 5 specific features
+- CTA button: **"Upgrade to Pro →"**
+
+### 35.2 Hidden for PRO Users
+
+For a PRO or ADVISOR account:
+
+**What You Should See:**
+- The upgrade card is **completely absent** from the page — no empty space, no placeholder
+
+### 35.3 CTA Links to Billing
+
+Click **"Upgrade to Pro →"**.
+
+**What You Should See:**
+- Navigates to `/app/settings/billing`
+
+---
+
+## Section 36 — Guided Dashboard: Layout and Responsiveness
+
+**URL:** `http://acw8co8o0w8c48k444ogsgkw.31.220.51.123.sslip.io/app/overview`
+
+Tests overall dashboard layout quality.
+
+### 36.1 Desktop Layout (≥1280px)
+
+Resize browser to full desktop width.
+
+**What You Should See:**
+- Row 1: Plan Health Hero — full width
+- Row 2: Next Steps (3/5 width) + Plan Completion (2/5 width) side by side
+- Row 3: 5 metric cards in a single row
+- Row 4: Scenario, Freshness, Review cards in 3 columns
+- Row 5: AI Insights and Alerts in 2 columns
+- Row 6: Upgrade card full width (or absent for PRO)
+
+### 36.2 Mobile Layout (≤640px)
+
+Resize browser to 375px width (iPhone size).
+
+**What You Should See:**
+- All cards **stack vertically** — no horizontal overflow or cropped content
+- Hero card remains readable — score ring and text visible
+- Metrics grid collapses to 2 columns
+- No horizontal scrollbar
+
+### 36.3 No Blank Cards or Errors
+
+**What You Should See:**
+- No section displays raw `undefined`, `NaN`, `null`, or `[object Object]`
+- No broken/empty card states (every card has at least a title and some content)
+- No JavaScript errors in the browser console (`F12 → Console` tab)
+
+---
+
+## Section 37 — Guided Dashboard: New User / Incomplete State
+
+Create a **fresh test account** with no data entered.
+
+**URL:** `http://acw8co8o0w8c48k444ogsgkw.31.220.51.123.sslip.io/app/overview`
+
+### 37.1 Page Title
+
+**What You Should See:**
+- Page title: **"Welcome to RetirePlan"** (not "Your Retirement Plan" — new user variant)
+
+### 37.2 Incomplete Hero
+
+**What You Should See:**
+- Status badge: `Incomplete`
+- No score ring — replaced with 📋 icon
+- Explanation: "Complete your core plan details to generate your retirement health score."
+
+### 37.3 Setup-Focused Actions
+
+**What You Should See:**
+- First action: "Finish setting up your plan" with CTA "Continue Setup"
+- Second action: "Run your first retirement projection" (once data is added, but not yet)
+
+### 37.4 Completion Shows 0%
+
+**What You Should See:**
+- Completion percentage: **0%** (or very low)
+- Progress bar is empty or amber
+- Most checklist items show grey ○ (not started)
+
+### 37.5 Metrics Show Graceful Fallbacks
+
+**What You Should See:**
+- "Target Retirement Age" → "Not set"
+- "Years Funded" → "Not calculated"
+- "Projected Ending Balance" → "Not calculated"
+- "Monte Carlo Success Rate" → "Not run yet"
+- "Expected Return Rate" → "Not configured"
+
+### 37.6 Dashboard Never Crashes
+
+**What You Should See:**
+- No uncaught exceptions
+- No 500 error
+- Page fully renders with appropriate empty states for every section
+
+---
+
 ## Test Results Summary
 
 | Section | Feature | Result | Notes |
@@ -1057,7 +1521,7 @@ Make 6 rapid POST requests to `/api/simulations` (or any endpoint) in quick succ
 | 6 | Benefits (Social Security) | | |
 | 7 | Housing / Real Estate | | |
 | 8 | Planning Assumptions | | |
-| 9 | Overview Dashboard | | |
+| 9 | Overview Dashboard (legacy check) | | |
 | 10 | Deterministic Simulation (no depletion) | | |
 | 11 | Scenarios | | |
 | 12 | Social Security Optimization | | |
@@ -1074,6 +1538,18 @@ Make 6 rapid POST requests to `/api/simulations` (or any endpoint) in quick succ
 | 23 | Health API | | |
 | 24 | Security Headers | | |
 | 25 | Rate Limiting | | |
+| 26 | Guided Dashboard: Plan Health Hero | | |
+| 27 | Guided Dashboard: Recommended Next Steps | | |
+| 28 | Guided Dashboard: Plan Completion Tracker | | |
+| 29 | Guided Dashboard: Key Metrics Grid | | |
+| 30 | Guided Dashboard: Scenario Snapshot | | |
+| 31 | Guided Dashboard: Data Freshness | | |
+| 32 | Guided Dashboard: Next Review Card | | |
+| 33 | Guided Dashboard: AI Insight Summary | | |
+| 34 | Guided Dashboard: Alerts Summary | | |
+| 35 | Guided Dashboard: Upgrade Value Card | | |
+| 36 | Guided Dashboard: Layout & Responsiveness | | |
+| 37 | Guided Dashboard: New User / Incomplete State | | |
 
 ---
 
