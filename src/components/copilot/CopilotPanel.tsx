@@ -57,6 +57,18 @@ export function CopilotPanel({ householdId, className }: CopilotPanelProps) {
       });
 
       if (!res.ok) {
+        if (res.status === 402) {
+          const upgradeMsg: ConversationMessage = {
+            id: randomId(),
+            role: 'assistant',
+            content: '🔒 **Pro Feature** — The AI Copilot requires a Pro or Advisor subscription. [Upgrade to Pro →](/app/settings/billing)',
+            timestamp: new Date().toISOString(),
+            fromFallback: true,
+          };
+          setMessages((prev) => [...prev, upgradeMsg]);
+          setIsLoading(false);
+          return;
+        }
         throw new Error(`Request failed: ${res.status}`);
       }
 

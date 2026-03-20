@@ -111,7 +111,7 @@ export default function NotificationSettingsPage() {
         const data = await res.json() as PreferencesPayload;
         setPrefs(data.preferences);
         setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 2000);
+        setTimeout(() => setSaveSuccess(false), 5000);
       }
     } finally {
       setSaving(false);
