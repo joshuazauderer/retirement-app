@@ -74,4 +74,13 @@ export const simulationService = {
       where: { id: runId, householdId },
     });
   },
+
+  async deleteRun(runId: string, householdId: string) {
+    const run = await prisma.simulationRun.findFirst({
+      where: { id: runId, householdId },
+    });
+    if (!run) return null;
+    await prisma.simulationRun.delete({ where: { id: runId } });
+    return run;
+  },
 };

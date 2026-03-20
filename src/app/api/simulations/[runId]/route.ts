@@ -17,3 +17,19 @@ export async function GET(
   }
   return NextResponse.json({ run });
 }
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: { runId: string } }
+) {
+  const result = await requireHousehold();
+  if ("error" in result) return result.error;
+  const deleted = await simulationService.deleteRun(
+    params.runId,
+    result.household.id
+  );
+  if (!deleted) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  return NextResponse.json({ success: true });
+}
