@@ -64,8 +64,8 @@ export const assetAccountSchema = z.object({
       (v) =>
         v === undefined ||
         v === "" ||
-        (!isNaN(Number(v)) && Number(v) >= 0 && Number(v) <= 1),
-      "Return rate must be a decimal between 0 and 1 (e.g. 0.07 for 7%)"
+        (!isNaN(Number(v)) && Number(v) >= 0 && Number(v) <= 0.5),
+      "Return rate must be a decimal between 0 and 0.5 (e.g. 0.07 for 7%). Values above 50% are not realistic for long-term planning."
     ),
   notes: z.string().optional(),
   isActive: z.boolean().default(true),
