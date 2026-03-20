@@ -23,7 +23,12 @@ export function AlertsSummaryCard({ alerts }: { alerts: DashboardAlertSummary })
   if (!alerts.hasAlerts) {
     return (
       <div className="bg-white rounded-xl border border-slate-200 p-6">
-        <h2 className="font-semibold text-slate-900 mb-2">Alerts</h2>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="font-semibold text-slate-900">Alerts</h2>
+          <Link href="/app/settings/notifications" className="text-blue-600 text-xs font-medium hover:text-blue-800">
+            Manage →
+          </Link>
+        </div>
         <div className="flex items-center gap-2 text-green-600">
           <span>✓</span>
           <p className="text-sm">No active alerts — your plan looks good.</p>

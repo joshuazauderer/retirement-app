@@ -1386,7 +1386,7 @@ If a `PLAN_RISK_HIGH` or `PORTFOLIO_DEPLETION_ALERT` notification exists in the 
 Click **"View All Alerts →"** (or "View All →").
 
 **What You Should See:**
-- Navigates to `/app/notifications`
+- Navigates to `/app/settings/notifications`
 
 ---
 
